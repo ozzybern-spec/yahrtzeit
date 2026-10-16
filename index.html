@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>יזכור — לוח יארצייט</title>
-  <meta name="description" content="Daily yahrzeit list for Israel's fallen soldiers and victims of terror.">
+  <meta name="description" content="Daily yahrzeit list for Israel's fallen soldiers, security personnel and civilian victims of terror.">
   <meta name="theme-color" content="#0c0e12">
   <script>try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch {}</script>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -61,6 +61,7 @@
           <button type="button" data-cat="soldier" data-t="soldierShort"></button>
           <button type="button" data-cat="terror" data-t="terrorShort"></button>
         </div>
+        <div id="today-periods" class="chips" role="group" hidden></div>
 
         <div id="list" class="list"></div>
       </section>
@@ -76,6 +77,7 @@
           <button type="button" data-cat="soldier" data-t="soldierShort"></button>
           <button type="button" data-cat="terror" data-t="terrorShort"></button>
         </div>
+        <div id="search-periods" class="chips" role="group" hidden></div>
         <h2 id="search-count" class="section-title"></h2>
         <div id="results" class="list"></div>
       </section>

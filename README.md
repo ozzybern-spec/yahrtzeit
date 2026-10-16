@@ -1,14 +1,14 @@
 # Israeli Yahrtzeit — יזכור
 
-A daily yahrzeit list for civilian victims of terror in Israel. Fallen soldiers are planned for a later phase. Open the site and it shows everyone whose yahrzeit falls on today's Hebrew date, so people can say *hashkavah*, learn *mishnayot* or say *Tehillim* for them.
+A daily yahrzeit list for Israel's fallen soldiers and security personnel and for civilian victims of terror. Open the site and it shows everyone whose yahrzeit falls on today's Hebrew date, so people can say *hashkavah*, learn *mishnayot* or say *Tehillim* for them.
 
-> **Data:** 5,296 civilian victims of terror (1851–2026) from the National Insurance Institute memorial site, laad.btl.gov.il, crawled October 2026. 30 records with inconsistent or partial dates are listed in `data/needs-review.txt`.
+> **Data (October 2026):** about 25,800 fallen soldiers and security personnel from the Ministry of Defense site, izkor.gov.il, and 5,296 civilian victims of terror from the National Insurance Institute site, laad.btl.gov.il. Records whose official dates disagree or are partial are listed in `data/needs-review.txt`.
 
 ## Features
 - **Today's yahrzeits** by Hebrew date. Go to another day with the arrows, by swiping, with the arrow keys, by tapping the date for a picker, or from the scrollable strip of days, which shows how many people are remembered on each day. An "after sunset" switch moves to the next Hebrew day.
 - **Details panel:** tap a name to see all of the person's details, copy "Ploni ben/bat Ploni" for prayer, share, or open the official record.
 - **Search** by name, father's name or town, with each result's next yahrzeit.
-- **Filters** for soldiers and victims of terror.
+- **Filters:** civilians or security forces, and by war (official war dates; see `src/periods.js`). Neither official list records how a soldier died, so there is no battle/terror/accident filter.
 - **Hebrew and English**, with right-to-left layout in Hebrew. Fonts are Noto Serif Hebrew for names and dates and Rubik for the interface.
 - **Installable app:** it can be added to a phone's home screen and works offline.
 - Light and dark modes. No build step and no backend, so it can be hosted on GitHub Pages.
@@ -28,35 +28,29 @@ npm test
 - A death in *Adar II* is observed in the last *Adar* of the year.
 
 ## Data
-The app reads `data/fallen.json`:
-```json
-{ "demo": false, "people": [ {
-  "id": "…", "category": "soldier | terror",
-  "name": {"he": "…", "en": "…"}, "father": {"he": "…", "en": "…"}, "gender": "m | f",
-  "age": 20, "died": "YYYY-MM-DD", "afterSunset": false,
-  "hometown": {"he": "…"}, "place": {"he": "…"}, "rank": {"he": "…"}, "unit": {"he": "…"},
-  "context": {"he": "…"}, "source": "https://…"
-} ] }
-```
-- `npm run import -- records.csv` builds the file from a CSV. The columns are listed at the top of `scripts/csv-to-json.mjs`.
-- `npm run demo-data` regenerates the placeholder data.
+Built by `scripts/build-data.mjs` from the raw crawls in `data/raw/` (not committed):
+- `data/index.json`: a compact entry per person for the daily view and search (keys are documented in `indexEntry()`; the app expands them in `expand()`).
+- `data/people/<id>.json`: details and biography, loaded when someone opens that person.
+- `data/needs-review.txt`: official Hebrew and Gregorian dates more than a day apart, or dates without a day.
 
-### Victims of terror (laad.btl.gov.il)
-The National Insurance Institute's memorial site is the official list. Its search pages are blocked outside Israel, so the crawler loads each person's page by ID:
+An official Hebrew date is used when it is within a day of the Gregorian date (a death after sunset is the next Hebrew day, and a death at night is often recorded a day apart); otherwise the Gregorian date is used.
+
 ```bash
-NODE_USE_ENV_PROXY=1 node scripts/scrape-laad.mjs 30000 48000 4   # writes data/raw/laad.jsonl; safe to rerun
-NODE_USE_ENV_PROXY=1 node scripts/scrape-laad-bio.mjs 8           # biographies for pages crawled before bios were saved
-node scripts/build-laad.mjs                                       # writes data/fallen.json and data/bio/<id>.json
+# Civilian victims of terror (laad.btl.gov.il). Its search pages are blocked outside Israel, so pages are loaded by ID.
+NODE_USE_ENV_PROXY=1 node scripts/scrape-laad.mjs 1 48000 4   # data/raw/laad.jsonl; safe to rerun
+NODE_USE_ENV_PROXY=1 node scripts/scrape-laad-bio.mjs 8       # biographies for older crawls
+# Fallen soldiers and security personnel (izkor.gov.il), from its sitemap; run shards 0-7 in parallel.
+NODE_USE_ENV_PROXY=1 node scripts/scrape-izkor.mjs 4 0 8      # data/raw/izkor.jsonl; safe to rerun
+node scripts/build-data.mjs
 ```
-The site gives the Hebrew date of death. That date is used when it matches the Gregorian date or the day after (a death after sunset); otherwise the Gregorian date is used. Before publishing, get the National Insurance Institute's permission or confirm its terms of use allow this.
+Before relying on the data, confirm with the Ministry of Defense and the National Insurance Institute that their terms allow this use.
 
-**Soldiers (later phase):** the Ministry of Defense's [izkor.gov.il](https://www.izkor.gov.il).
+The demo generator (`npm run demo-data`) and CSV importer (`npm run import`) still write the old single-file `data/fallen.json` format.
 
 ## Deploy
 Live at https://ozzybern-spec.github.io/israeli-yahrtzeit/. GitHub Pages publishes straight from `main` (Settings → Pages → Deploy from a branch → `main`, `/ (root)`), so pushing to `main` updates the site. `.github/workflows/test.yml` runs the tests on every push.
 
 ## Possible next steps
-- Load the real data, with permission.
 - Sign-ups so people can claim a name to say *hashkavah* or learn *mishnayot* for (this needs a small backend).
-- A daily email or WhatsApp digest, and a PWA so it can be installed as an app.
-- At 30k+ records, split the data into per-day JSON files built at deploy time instead of one file.
+- A daily email or WhatsApp digest.
+- Visitors adding memories or photos (needs a backend and moderation).

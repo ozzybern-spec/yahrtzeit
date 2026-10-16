@@ -1,5 +1,6 @@
 import { HDate, gematriya } from '@hebcal/hdate';
 import { strings } from './i18n.js';
+import { PERIODS, OTHER, periodOf } from './periods.js';
 import {
   parseISO, toISO, deathHDate, buildIndex, nextYahrzeit, anniversaryNumber, prayerName,
 } from './yahrzeit.js';
@@ -18,6 +19,7 @@ const state = {
   date: startOfDay(new Date()),
   afterSunset: false,
   category: 'all',
+  period: 'all',
   adar: store.get('adar') === 'II' ? 'II' : 'I',
   theme: store.get('theme') === 'light' ? 'light' : 'dark',
   query: '',
@@ -42,10 +44,37 @@ function hdateFor(date) {
   return state.afterSunset ? hd.next() : hd;
 }
 
-function peopleOn(date) {
+const passesCategory = (p) => state.category === 'all' || p.category === state.category;
+const passes = (p) => passesCategory(p) && (state.period === 'all' || p.period === state.period);
+
+/** Everyone remembered on `date`, before the period filter (it gets its own counts). */
+function allOn(date) {
   const hd = hdateFor(date);
-  const list = indexFor(hd.getFullYear()).get(hd.abs()) || [];
-  return state.category === 'all' ? list : list.filter((p) => p.category === state.category);
+  return (indexFor(hd.getFullYear()).get(hd.abs()) || []).filter(passesCategory);
+}
+const peopleOn = (date) => allOn(date).filter(passes);
+
+/** Expand a compact index entry (see scripts/build-data.mjs) into a person. */
+function expand(o) {
+  const both = (he, en) => (he ? { he, en } : undefined);
+  const p = {
+    id: o.i,
+    category: o.c,
+    name: { he: o.n, en: o.e },
+    gender: o.g === 'f' ? 'f' : 'm',
+    age: o.a,
+    died: o.d,
+    hebrewDate: o.h && { yy: o.h[0], mm: o.h[1], dd: o.h[2] },
+    placeShort: both(o.l),
+    rank: both(o.r, o.re),
+    unit: both(o.u, o.ue),
+    hometown: both(o.t, o.te),
+    hasBio: Boolean(o.b),
+  };
+  if (o.f === 1) p.photo = `https://www.izkor.gov.il/assets/person/images/${o.i.split('-')[1].padStart(6, '0')}.jpg`;
+  else if (o.f) p.photo = `https://laad.btl.gov.il${o.f}`;
+  p.period = periodOf(o.d).key;
+  return p;
 }
 
 const fmtHebrew = (hd, L) => (L === 'he'
@@ -90,14 +119,18 @@ function avatar(p, cls = 'avatar') {
 }
 
 /**
- * "Jaffa · 5699 · age 38". Inside an event group the place and year are in
- * the heading, so show "from Be'er Sheva · age 33" instead.
+ * Civilians: "Jaffa · 5699 · age 38"; soldiers: "Sergeant · Golani · 5733 · age 20".
+ * Inside a group the place or unit and the year are in the heading, so show
+ * the hometown and age instead.
  */
 function summary(p, L, inGroup) {
   const t = strings[L];
   const age = p.age != null && t.age(p.age, p.gender);
   const year = L === 'he' ? gematriya(deathHDate(p).getFullYear()) : String(parseISO(p.died).getFullYear());
-  const parts = (inGroup ? [p.hometown && t.from(pick(p.hometown, L)), age] : [pick(p.placeShort || p.place, L), year, age]).filter(Boolean);
+  const parts = (p.category === 'soldier'
+    ? (inGroup ? [pick(p.rank, L), p.hometown && t.from(pick(p.hometown, L)), age] : [pick(p.rank, L), pick(p.unit, L), year, age])
+    : (inGroup ? [p.hometown && t.from(pick(p.hometown, L)), age] : [pick(p.placeShort || p.place, L), year, age])
+  ).filter(Boolean);
   // Isolate each part so Hebrew next to numbers keeps its order in the English UI.
   return parts.flatMap((x, i) => (i ? [' · ', el('bdi', {}, x)] : [el('bdi', {}, x)]));
 }
@@ -133,29 +166,36 @@ function detailRow(label, value) {
 }
 
 const CORRECTIONS_URL = 'https://laad.btl.gov.il/Web/He/ContactUs/Default.aspx';
+const IZKOR_CONTACT_URL = 'https://www.izkor.gov.il/contact';
 
-/** Biography from the official record, fetched when the sheet opens. */
-function bioSection(p) {
+/** Biography from the official record, collapsed to a few lines at first. */
+function bioSection(cv) {
   const t = strings[state.lang];
-  const text = el('div', { class: 'bio-text', dir: 'rtl' }, el('p', { class: 'muted' }, '…'));
+  const text = el('div', { class: 'bio-text', dir: 'rtl' }, ...cv.split(/\n{2,}/).map((para) => el('p', {}, para)));
   const more = el('button', { class: 'bio-more', type: 'button', hidden: true }, t.readMore);
   const box = el('section', { class: 'bio collapsed' }, el('h3', {}, t.bioTitle), text, more);
   more.addEventListener('click', () => { box.classList.remove('collapsed'); more.hidden = true; });
-  fetch(`data/bio/${p.id}.json`)
-    .then((r) => (r.ok ? r.json() : Promise.reject()))
-    .then(({ cv }) => {
-      text.replaceChildren(...cv.split(/\n{2,}/).map((para) => el('p', {}, para)));
-      requestAnimationFrame(() => { more.hidden = text.scrollHeight <= text.clientHeight + 4; });
-    })
-    .catch(() => box.remove());
+  requestAnimationFrame(() => { more.hidden = text.scrollHeight <= text.clientHeight + 4; });
   return box;
 }
 
-function openSheet(p) {
+/** Details and biography live in data/people/<id>.json, fetched when the sheet opens. */
+async function loadDetails(p) {
+  try {
+    const r = await fetch(`data/people/${p.id}.json`);
+    return r.ok ? await r.json() : {};
+  } catch { return {}; }
+}
+
+async function openSheet(base) {
   const t = strings[state.lang];
   const L = state.lang;
+  const extra = await loadDetails(base);
+  const p = { ...base, ...extra, place: extra.place && { he: extra.place.he || extra.place } };
+  if (L === 'en' && p.parentsEn) p.parents = p.parentsEn;
   const died = deathHDate(p);
   const pn = prayerName(p, L);
+  const fromLaad = p.id.startsWith('laad-');
   const body = $('#sheet-body');
 
   const copy = el('button', { class: 'action primary', type: 'button' },
@@ -187,10 +227,10 @@ function openSheet(p) {
       detailRow(t.rank, pick(p.rank, L)),
       detailRow(t.unit, pick(p.unit, L)),
       detailRow(t.place, pick(p.place, L)),
-      detailRow(t.burial, pick(p.burial, L)),
+      detailRow(t.burial, p.mia ? t.burialUnknown : pick(p.burial, L)),
       detailRow(t.survivors(p.gender), pick(p.survivors, L)),
     ),
-    p.hasBio && bioSection(p),
+    p.cv && bioSection(p.cv),
     p.context && el('p', { class: 'sheet-context', dir: 'auto' }, pick(p.context, L)),
     el('div', { class: 'actions' },
       copy,
@@ -198,12 +238,16 @@ function openSheet(p) {
       p.source && el('a', { class: 'action', href: p.source, target: '_blank', rel: 'noopener' },
         svg('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'), t.source),
     ),
-    p.source && el('a', { class: 'report', href: CORRECTIONS_URL, target: '_blank', rel: 'noopener' }, t.report),
+    p.source && el('a', { class: 'report', href: fromLaad ? CORRECTIONS_URL : IZKOR_CONTACT_URL, target: '_blank', rel: 'noopener' },
+      fromLaad ? t.report : t.reportIzkor),
     el('button', { class: 'sheet-close', type: 'button', onclick: closeSheet }, t.close),
   ].filter(Boolean));
 
   const dlg = $('#sheet');
   dlg.showModal();
+  // showModal focuses the first button (often "read more"), which scrolls the sheet.
+  document.activeElement?.blur();
+  dlg.scrollTop = 0;
   requestAnimationFrame(() => dlg.classList.add('open'));
 }
 
@@ -266,7 +310,9 @@ function renderToday() {
   $('#demo').hidden = !state.demo;
   renderStrip();
 
-  const list = [...peopleOn(state.date)].sort((a, b) => a.died.localeCompare(b.died));
+  const all = allOn(state.date);
+  renderPeriods($('#today-periods'), all);
+  const list = all.filter(passes).sort((a, b) => a.died.localeCompare(b.died));
   $('#count').textContent = list.length === 0 ? t.countZero : list.length === 1 ? t.countOne : t.countMany(list.length);
   const out = $('#list');
   out.replaceChildren(...(list.length
@@ -282,15 +328,18 @@ function renderToday() {
 }
 
 /**
- * Group mass-casualty attacks: 3+ people killed on the same date at the
- * same place get a heading; everyone else follows, oldest first.
+ * Group mass-casualty days: 3+ civilians killed on the same date at the same
+ * place, or 3+ soldiers of the same unit on the same date, get a heading;
+ * everyone else follows, oldest first.
  */
 function groupByEvent(list) {
   const t = strings[state.lang];
   const L = state.lang;
   const byKey = new Map();
   for (const p of list) {
-    const key = `${p.died}|${p.place?.he || ''}`;
+    const key = p.category === 'soldier'
+      ? `${p.died}|s|${p.unit?.he || ''}`
+      : `${p.died}|c|${p.placeShort?.he || ''}`;
     if (!byKey.has(key)) byKey.set(key, []);
     byKey.get(key).push(p);
   }
@@ -300,7 +349,8 @@ function groupByEvent(list) {
     if (people.length >= 3) {
       const p = people[0];
       const year = L === 'he' ? gematriya(deathHDate(p).getFullYear()) : String(parseISO(p.died).getFullYear());
-      groups.push({ title: [pick(p.placeShort || p.place, L), year].filter(Boolean).join(' · '), people, event: true });
+      const where = p.category === 'soldier' ? pick(p.unit, L) : pick(p.placeShort, L);
+      groups.push({ title: [where, year].filter(Boolean).join(' · '), people, event: true });
     } else {
       rest.push(...people);
     }
@@ -310,8 +360,25 @@ function groupByEvent(list) {
   return groups;
 }
 
+/** Period chips with counts for the people in view; hidden when there is nothing to choose. */
+function renderPeriods(box, people) {
+  const t = strings[state.lang];
+  const L = state.lang;
+  const counts = new Map();
+  for (const p of people) counts.set(p.period, (counts.get(p.period) || 0) + 1);
+  const options = [...PERIODS, OTHER].filter((x) => counts.get(x.key));
+  // Keep a chosen period visible even when it has no one on this day.
+  if (state.period !== 'all' && !counts.get(state.period)) options.push([...PERIODS, OTHER].find((x) => x.key === state.period));
+  box.hidden = options.length < 2 && state.period === 'all';
+  const chip = (key, label, n) => el('button', {
+    class: 'chip', type: 'button', 'aria-pressed': String(state.period === key),
+    onclick: () => { state.period = state.period === key && key !== 'all' ? 'all' : key; render(); },
+  }, label, n != null && el('span', { class: 'chip-count' }, String(n)));
+  box.replaceChildren(chip('all', t.allPeriods, people.length), ...options.map((x) => chip(x.key, x[L], counts.get(x.key) || 0)));
+}
+
 function matches(p, q) {
-  const hay = [p.name.he, p.name.en, p.father?.he, p.father?.en, p.hometown?.he, p.hometown?.en]
+  const hay = [p.name.he, p.name.en, p.hometown?.he, p.hometown?.en, p.unit?.he, p.unit?.en, p.placeShort?.he]
     .filter(Boolean).join(' ').toLowerCase();
   return q.toLowerCase().split(/\s+/).every((w) => hay.includes(w));
 }
@@ -322,11 +389,13 @@ function renderSearch() {
   $('#search').placeholder = t.search;
   if (!q) {
     $('#search-count').textContent = '';
+    renderPeriods($('#search-periods'), []);
     $('#results').replaceChildren(el('p', { class: 'empty' }, t.searchHint));
     return;
   }
-  const list = state.people
-    .filter((p) => (state.category === 'all' || p.category === state.category) && matches(p, q));
+  const found = state.people.filter((p) => passesCategory(p) && matches(p, q));
+  renderPeriods($('#search-periods'), found);
+  const list = found.filter(passes);
   $('#search-count').textContent = t.searchResults(list.length);
   $('#results').replaceChildren(...(list.length
     ? list.slice(0, 200).map((p) => card(p, { showNext: true }))
@@ -441,9 +510,9 @@ function bind() {
 async function main() {
   bind();
   render();
-  const res = await fetch('data/fallen.json');
+  const res = await fetch('data/index.json');
   const data = await res.json();
-  state.people = data.people;
+  state.people = data.people.map(expand);
   state.demo = Boolean(data.demo);
   indexes.clear();
   render();

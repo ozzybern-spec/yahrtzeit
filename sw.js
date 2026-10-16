@@ -1,5 +1,5 @@
 // Offline support: own files network-first, CDN assets cache-first.
-const CACHE = 'yizkor-v5';
+const CACHE = 'yizkor-v6';
 const SHELL = [
   './', 'index.html', 'src/styles.css', 'src/app.js', 'src/i18n.js', 'src/yahrzeit.js',
   'icon.svg', 'manifest.webmanifest',

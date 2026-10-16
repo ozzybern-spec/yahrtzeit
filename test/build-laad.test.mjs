@@ -38,3 +38,12 @@ test('inconsistent Hebrew date falls back to Gregorian', () => {
   assert.equal(p.hebrewDate, undefined);
   assert.equal(p.dateMismatch, true);
 });
+
+test('years written with a final letter parse ("תש״ך")', () => {
+  assert.deepEqual(parseDeath('בכ"ה בחשון תש"ך, 26/11/1959').hebrew, { yy: 5720, mm: months.CHESHVAN, dd: 25 });
+});
+
+test('an official Hebrew date one day earlier is kept', () => {
+  const p = toPerson({ ...raw, death: 'בכ"א בתשרי תשפ"ד, 7/10/2023' });
+  assert.equal(p.hebrewDate.dd, 21);
+});

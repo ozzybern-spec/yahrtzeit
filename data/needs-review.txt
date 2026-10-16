@@ -1,11 +1,7 @@
 Hebrew/Gregorian mismatch | 28664 | אליה ריגר | בכ"ח בכסלו תשס"ד, 22/11/2003
-Hebrew/Gregorian mismatch | 34536 | דמיטרי פונדיקוב | בי"ג באב תשס"ב, 23/7/2002
 Hebrew/Gregorian mismatch | 34691 | דוד דניאל גלצר | בכ"ח באב תרפ"ט, 24/8/1929
 Hebrew/Gregorian mismatch | 35787 | דב בן-עמי | בב' בתמוז תרצ"ו, 10/7/1936
-Hebrew/Gregorian mismatch | 35796 | בנימין בביוף | בט"ו באב תרצ"ח, 13/8/1938
-Hebrew/Gregorian mismatch | 35815 | צביה בביוף | בט"ו באב תרצ"ח, 13/8/1938
 Hebrew/Gregorian mismatch | 35835 | נתן זילברשטיין | בכ"א באדר תרצ"ח, 23/3/1938
-Hebrew/Gregorian mismatch | 35841 | אברהם גרדי | בי"ב בסיון תרצ"ז, 23/5/1937
 Hebrew/Gregorian mismatch | 35856 | אלתר קהת הכהן | בכ"א באייר תרצ"ו, 15/5/1936
 Hebrew/Gregorian mismatch | 35859 | הנס הניגר | בכ"ב באב תרצ"ח, 19/3/1938
 Hebrew/Gregorian mismatch | 35871 | בכור יהודה שחרור | בכ"ה באדר תרצ"ח, 28/3/1938
@@ -17,13 +13,22 @@ Hebrew/Gregorian mismatch | 35923 | יוסף לואידור | בכ"א בניסן
 Hebrew/Gregorian mismatch | 35925 | זכריה לוי | בט"ו באלול תרצ"ח, 13/9/1938
 Hebrew/Gregorian mismatch | 35952 | שלום שרעבי | בכ"ח בסיון תרצ"ח, 24/6/1938
 Hebrew/Gregorian mismatch | 35994 | מנחם מנדל מינץ | בכ"א בשבט תרצ"ו, 2/2/1937
-Hebrew/Gregorian mismatch | 36002 | שאול מנשה | בי"ז בתשרי תרצ"ט, 13/10/1938
 Hebrew/Gregorian mismatch | 36010 | אשר רביטש | בכ"ג בשבט ת"ש, 12/2/1939
 Hebrew/Gregorian mismatch | 37378 | שלמה שחב | בכ"ד בשבט תשל"ו, 26/2/1976
 Hebrew/Gregorian mismatch | 38403 | ברוך דוד סגל | בכ"ח באדר ב' תרצ"ח, 28/3/1938
 Hebrew/Gregorian mismatch | 38452 | ברך קוריכמן | בי"ד באדר א' תרפ"ד, 19/3/1924
 Hebrew/Gregorian mismatch | 40732 | גניה פולייס | בג' בחשוון תשס"ה, 5/11/2005
 Hebrew/Gregorian mismatch | 45630 | איבט שמילוביץ | בב' בסיון תשפ"ה, 16/6/2025
+Hebrew/Gregorian mismatch | izkor-45760 | יוסף (יוסי) פילצקי | א' בסיון תשכ"ז, 11-6-1967
+Hebrew/Gregorian mismatch | izkor-4713 | דניאל קריגר | ו' בשבט תש"י, 21-1-1950
+Hebrew/Gregorian mismatch | izkor-510575 | אליהו עזריה | כ"ג באלול תשמ"ג, 3-9-1983
+Hebrew/Gregorian mismatch | izkor-77121 | שמואל איזן | כ' באייר תשכ"ב, 29-5-1962
+Hebrew/Gregorian mismatch | izkor-91232 | רות (רותינקה) לוי | כ' בתמוז תשכ"ח, 16-6-1968
+Hebrew/Gregorian mismatch | izkor-92280 | חיים שניידרמן | כ' באייר תש"ח, 26-5-1948
+Hebrew/Gregorian mismatch | izkor-96163 | מנחם קאופמן | כ"ז באלול תשל"ז, 8-9-1977
+Hebrew/Gregorian mismatch | izkor-97045 | אהוד (אודי) בר | ד' באלול תשל"ה, 10-11-1975
+Hebrew/Gregorian mismatch | izkor-97581 | הנרי צבירן | כ"ד בטבת תשל"ח, 7-1-1978
+Hebrew/Gregorian mismatch | izkor-98194 | אליהו (אלי) לוי | ה' בניסן תש"ם, 25-3-1980
 no usable date | 35763 | אהרון ביקוב | באייר תרס"ט, 5/1909
 no usable date | 35797 | מרדכי צבי הירש | בתשרי תשס"ז, 10/1906
 no usable date | 38448 | שמעון קובי | בחשוון תרפ"ח, 11/1927
