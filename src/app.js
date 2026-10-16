@@ -19,6 +19,7 @@ const state = {
   afterSunset: false,
   category: 'all',
   adar: store.get('adar') === 'II' ? 'II' : 'I',
+  theme: store.get('theme') === 'light' ? 'light' : 'dark',
   query: '',
   people: [],
   demo: false,
@@ -75,37 +76,51 @@ function svg(path) {
 
 /* ---------- Cards and sheet ---------- */
 
-function initials(p, L) {
-  const name = pick(p.name, L) || '';
-  return name.trim().charAt(0);
+function avatar(p, cls = 'avatar') {
+  const box = el('span', { class: cls, 'aria-hidden': 'true' });
+  const candle = () => el('span', { class: 'candle' }, el('span', { class: 'flame' }));
+  if (p.photo) {
+    const img = el('img', { src: p.photo, alt: '', loading: 'lazy', decoding: 'async', referrerpolicy: 'no-referrer' });
+    img.addEventListener('error', () => img.replaceWith(candle()));
+    box.append(img);
+  } else {
+    box.append(candle());
+  }
+  return box;
 }
 
-function card(p, { showNext = false } = {}) {
+/**
+ * "Jaffa · 5699 · age 38". Inside an event group the place and year are in
+ * the heading, so show "from Be'er Sheva · age 33" instead.
+ */
+function summary(p, L, inGroup) {
+  const t = strings[L];
+  const age = p.age != null && t.age(p.age, p.gender);
+  const year = L === 'he' ? gematriya(deathHDate(p).getFullYear()) : String(parseISO(p.died).getFullYear());
+  const parts = (inGroup ? [p.hometown && t.from(pick(p.hometown, L)), age] : [pick(p.place, L), year, age]).filter(Boolean);
+  // Isolate each part so Hebrew next to numbers keeps its order in the English UI.
+  return parts.flatMap((x, i) => (i ? [' · ', el('bdi', {}, x)] : [el('bdi', {}, x)]));
+}
+
+function card(p, { showNext = false, inGroup = false } = {}) {
   const t = strings[state.lang];
   const L = state.lang;
-  const hd = hdateFor(state.date);
-  const nth = anniversaryNumber(p, hd.getFullYear());
-  const sub = [
-    p.age != null && t.age(p.age, p.gender),
-    p.hometown && t.from(pick(p.hometown, L)),
-  ].filter(Boolean).join(' · ');
+  const multiCat = new Set(state.people.map((x) => x.category)).size > 1;
 
   let badge;
   if (showNext) {
     const up = nextYahrzeit(p, hdateFor(startOfDay(new Date())), state.adar);
     badge = up && `${t.nextShort} ${fmtHebrew(up, L)}`;
-  } else if (nth > 0) {
-    badge = t.yahrzeitNo(nth);
   }
 
   return el('button', { class: `card ${p.category}`, type: 'button', onclick: () => openSheet(p) },
-    el('span', { class: 'avatar', 'aria-hidden': 'true' }, initials(p, L)),
+    avatar(p),
     el('span', { class: 'card-main' },
       el('span', { class: 'card-name', dir: 'auto' }, pick(p.name, L)),
-      el('span', { class: 'card-sub', dir: 'auto' }, sub),
-      el('span', { class: 'card-meta' },
-        el('span', { class: `dot ${p.category}` }),
-        t[`${p.category}Short`],
+      el('span', { class: 'card-sub', dir: L === 'he' ? 'rtl' : 'ltr' }, ...summary(p, L, inGroup)),
+      (badge || multiCat) && el('span', { class: 'card-meta' },
+        multiCat && el('span', { class: `dot ${p.category}` }),
+        multiCat && t[`${p.category}Short`],
         badge && el('span', { class: 'badge' }, badge),
       ),
     ),
@@ -115,6 +130,25 @@ function card(p, { showNext = false } = {}) {
 
 function detailRow(label, value) {
   return value ? el('div', { class: 'detail' }, el('dt', {}, label), el('dd', { dir: 'auto' }, value)) : null;
+}
+
+const CORRECTIONS_URL = 'https://laad.btl.gov.il/Web/He/ContactUs/Default.aspx';
+
+/** Biography from the official record, fetched when the sheet opens. */
+function bioSection(p) {
+  const t = strings[state.lang];
+  const text = el('div', { class: 'bio-text', dir: 'rtl' }, el('p', { class: 'muted' }, '…'));
+  const more = el('button', { class: 'bio-more', type: 'button', hidden: true }, t.readMore);
+  const box = el('section', { class: 'bio collapsed' }, el('h3', {}, t.bioTitle), text, more);
+  more.addEventListener('click', () => { box.classList.remove('collapsed'); more.hidden = true; });
+  fetch(`data/bio/${p.id}.json`)
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then(({ cv }) => {
+      text.replaceChildren(...cv.split(/\n{2,}/).map((para) => el('p', {}, para)));
+      requestAnimationFrame(() => { more.hidden = text.scrollHeight <= text.clientHeight + 4; });
+    })
+    .catch(() => box.remove());
+  return box;
 }
 
 function openSheet(p) {
@@ -138,21 +172,25 @@ function openSheet(p) {
 
   body.replaceChildren(...[
     el('div', { class: 'sheet-head' },
-      el('span', { class: 'candle big', 'aria-hidden': 'true' }, el('span', { class: 'flame' })),
+      avatar(p, 'portrait'),
       el('h2', { class: 'sheet-name', dir: 'auto' }, pick(p.name, L)),
       p.nick && el('p', { class: 'sheet-nick', dir: 'rtl' }, `(${p.nick})`),
       (p.father || p.parents) && el('p', { class: 'sheet-prayer', dir: 'auto' }, pn),
-      el('span', { class: `tag ${p.category}` }, t[p.category]),
+      new Set(state.people.map((x) => x.category)).size > 1 && el('span', { class: `tag ${p.category}` }, t[p.category]),
     ),
     el('dl', { class: 'details' },
       detailRow(t.dateOfDeath, `${fmtHebrew(died, L)}\n${fmtGreg(parseISO(p.died), L)}`),
+      p.diedOfWounds && detailRow(t.circumstances, t.diedOfWounds(p.gender)),
+      detailRow(t.yahrzeit, (() => { const n = anniversaryNumber(p, hdateFor(state.date).getFullYear()); return n > 0 ? t.nth(n) : null; })()),
       p.age != null && detailRow(t.ageLabel, String(p.age)),
       detailRow(t.hometown, pick(p.hometown, L)),
       detailRow(t.rank, pick(p.rank, L)),
       detailRow(t.unit, pick(p.unit, L)),
       detailRow(t.place, pick(p.place, L)),
       detailRow(t.burial, pick(p.burial, L)),
+      detailRow(t.survivors(p.gender), pick(p.survivors, L)),
     ),
+    p.hasBio && bioSection(p),
     p.context && el('p', { class: 'sheet-context', dir: 'auto' }, pick(p.context, L)),
     el('div', { class: 'actions' },
       copy,
@@ -160,6 +198,7 @@ function openSheet(p) {
       p.source && el('a', { class: 'action', href: p.source, target: '_blank', rel: 'noopener' },
         svg('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'), t.source),
     ),
+    p.source && el('a', { class: 'report', href: CORRECTIONS_URL, target: '_blank', rel: 'noopener' }, t.report),
     el('button', { class: 'sheet-close', type: 'button', onclick: closeSheet }, t.close),
   ].filter(Boolean));
 
@@ -229,9 +268,46 @@ function renderToday() {
 
   const list = [...peopleOn(state.date)].sort((a, b) => a.died.localeCompare(b.died));
   $('#count').textContent = list.length === 0 ? t.countZero : list.length === 1 ? t.countOne : t.countMany(list.length);
-  $('#list').replaceChildren(...(list.length
-    ? list.map((p) => card(p))
+  const out = $('#list');
+  out.replaceChildren(...(list.length
+    ? groupByEvent(list).flatMap((g) => [
+      g.title && el('h3', { class: 'group-title', dir: 'auto' },
+        el('span', {}, g.title), el('span', { class: 'group-count' }, String(g.people.length))),
+      ...g.people.map((p) => card(p, { inGroup: g.event })),
+    ]).filter(Boolean)
     : [el('div', { class: 'empty' }, el('span', { class: 'candle big dim' }, el('span', { class: 'flame' })), t.none)]));
+  out.classList.remove('fade-in');
+  void out.offsetWidth; // restart the animation
+  out.classList.add('fade-in');
+}
+
+/**
+ * Group mass-casualty attacks: 3+ people killed on the same date at the
+ * same place get a heading; everyone else follows, oldest first.
+ */
+function groupByEvent(list) {
+  const t = strings[state.lang];
+  const L = state.lang;
+  const byKey = new Map();
+  for (const p of list) {
+    const key = `${p.died}|${p.place?.he || ''}`;
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push(p);
+  }
+  const groups = [];
+  const rest = [];
+  for (const people of byKey.values()) {
+    if (people.length >= 3) {
+      const p = people[0];
+      const year = L === 'he' ? gematriya(deathHDate(p).getFullYear()) : String(parseISO(p.died).getFullYear());
+      groups.push({ title: [pick(p.place, L), year].filter(Boolean).join(' · '), people, event: true });
+    } else {
+      rest.push(...people);
+    }
+  }
+  groups.sort((a, b) => b.people.length - a.people.length);
+  if (rest.length) groups.push({ title: groups.length ? t.others : '', people: rest });
+  return groups;
 }
 
 function matches(p, q) {
@@ -262,6 +338,8 @@ function render() {
   const L = state.lang;
   document.documentElement.lang = L;
   document.documentElement.dir = L === 'he' ? 'rtl' : 'ltr';
+  document.documentElement.dataset.theme = state.theme;
+  for (const b of $$('[data-theme-opt] button')) b.setAttribute('aria-pressed', String(b.dataset.themeVal === state.theme));
   document.title = t.title;
   for (const n of $$('[data-t]')) {
     const v = t[n.dataset.t];
@@ -306,6 +384,9 @@ function bind() {
 
   for (const b of $$('[data-filters] button')) {
     b.addEventListener('click', () => { state.category = b.dataset.cat; render(); });
+  }
+  for (const b of $$('[data-theme-opt] button')) {
+    b.addEventListener('click', () => { state.theme = b.dataset.themeVal; store.set('theme', state.theme); render(); });
   }
   for (const b of $$('[data-adar] button')) {
     b.addEventListener('click', () => { state.adar = b.dataset.adar; store.set('adar', state.adar); render(); });

@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>יזכור — לוח יארצייט</title>
   <meta name="description" content="Daily yahrzeit list for Israel's fallen soldiers and victims of terror.">
-  <meta name="theme-color" content="#f7f3ea" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0f1216" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#0c0e12">
+  <script>try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch {}</script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.webmanifest">
@@ -39,6 +39,7 @@
           <button id="date-btn" class="hero-date" type="button">
             <span id="hebrew-date" class="hebrew-date"></span>
             <span id="greg-date" class="greg-date"></span>
+            <span id="count" class="count-line" aria-live="polite"></span>
           </button>
           <button id="next" class="hero-arrow" type="button"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
           <input id="date-input" class="visually-hidden" type="date" tabindex="-1" aria-hidden="true">
@@ -61,7 +62,6 @@
           <button type="button" data-cat="terror" data-t="terrorShort"></button>
         </div>
 
-        <h2 id="count" class="section-title" aria-live="polite"></h2>
         <div id="list" class="list"></div>
       </section>
 
@@ -87,6 +87,13 @@
           <h2 data-t="aboutTitle"></h2>
           <p data-t="aboutBody"></p>
           <p class="muted" data-t="aboutCalc"></p>
+        </div>
+        <div class="setting-card">
+          <h3 data-t="themeTitle"></h3>
+          <div class="segmented two" data-theme-opt role="group">
+            <button type="button" data-theme-val="dark" data-t="themeDark"></button>
+            <button type="button" data-theme-val="light" data-t="themeLight"></button>
+          </div>
         </div>
         <div class="setting-card">
           <h3 data-t="adarTitle"></h3>

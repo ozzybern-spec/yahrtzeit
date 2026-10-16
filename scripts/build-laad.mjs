@@ -1,6 +1,6 @@
 // Turn data/raw/laad.jsonl (from scrape-laad.mjs) into data/fallen.json.
 // Usage: node scripts/build-laad.mjs
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { HDate, gematriyaStrToNum, months } from '@hebcal/hdate';
 import { parseISO, toISO } from '../src/yahrzeit.js';
 
@@ -48,6 +48,10 @@ export function toPerson(r) {
     place: he(clean(r.eventPlace, /^מקום אירוע:\s*/)),
     burial: he(clean(r.grave.split('\n')[0], /^הובא[הו]?\s+למנוחת עולמים\s*ב/)),
     source: `https://laad.btl.gov.il/Web/He/TerrorVictims/Page/Default.aspx?ID=${r.id}`,
+    photo: r.photo ? `https://laad.btl.gov.il${r.photo}` : undefined,
+    diedOfWounds: /^נפטר/.test(r.cause) || undefined,
+    survivors: he(clean(r.bereaved || '', /^הותיר[הו]?:\s*/)),
+    hasBio: Boolean(r.cv) || undefined,
   };
   // Keep the official Hebrew date only when it agrees with the Gregorian date
   // (same day, or the next day for a death after sunset).
@@ -63,16 +67,26 @@ export function toPerson(r) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const lines = readFileSync(new URL('../data/raw/laad.jsonl', import.meta.url), 'utf8').split('\n').filter(Boolean);
+  // Biographies from scrape-laad-bio.mjs (newer crawls include them in laad.jsonl).
+  const bioFile = new URL('../data/raw/laad-bio.jsonl', import.meta.url);
+  const bios = new Map(existsSync(bioFile)
+    ? readFileSync(bioFile, 'utf8').split('\n').filter(Boolean).map((l) => { const b = JSON.parse(l); return [b.id, b]; }) : []);
+  // Each biography is its own file, loaded only when someone opens that person.
+  const bioDir = new URL('../data/bio/', import.meta.url);
+  rmSync(bioDir, { recursive: true, force: true });
+  mkdirSync(bioDir, { recursive: true });
   const people = [];
   const seen = new Set();
   let skipped = 0, mismatched = 0;
   for (const l of lines) {
-    const r = JSON.parse(l);
+    const r = { ...JSON.parse(l) };
+    Object.assign(r, bios.get(r.id) && { cv: bios.get(r.id).cv, bereaved: bios.get(r.id).bereaved });
     if (seen.has(r.id)) continue; // a restarted crawl can record an ID twice
     seen.add(r.id);
     const p = toPerson(r);
     if (!p) { skipped++; continue; }
     if (p.dateMismatch) { mismatched++; delete p.dateMismatch; }
+    if (r.cv) writeFileSync(new URL(`${p.id}.json`, bioDir), JSON.stringify({ cv: r.cv }));
     people.push(p);
   }
   people.sort((a, b) => a.died.localeCompare(b.died));

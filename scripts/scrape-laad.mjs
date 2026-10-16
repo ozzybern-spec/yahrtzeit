@@ -22,9 +22,18 @@ const decode = (s) => s
   .replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
   .replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').trim();
 
-function span(html, id) {
+export function span(html, id) {
   const m = html.match(new RegExp(`<span id="${id}"[^>]*>([\\s\\S]*?)</span>\\s*</(?:dd|div|h1|p|figcaption)`));
   return m ? decode(m[1]) : '';
+}
+
+/** Biography and survivors, which live on the same page. */
+export function bio(html) {
+  const cv = html.match(/<span id="lblCV">([\s\S]*?)<\/span>\s*<\/p>/);
+  return {
+    cv: cv ? decode(cv[1].replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')) : '',
+    bereaved: span(html, 'lblBereaved'),
+  };
 }
 
 export function parse(html, id) {
@@ -54,10 +63,11 @@ export function parse(html, id) {
     region: span(html, 'lblRegion'),
     grave: span(html, 'lblGravePlace'),
     photo: img.includes('nopic') ? '' : img,
+    ...bio(html),
   };
 }
 
-async function get(id, tries = 4) {
+export async function get(id, tries = 4) {
   const url = `https://laad.btl.gov.il/Web/He/TerrorVictims/Page/Default.aspx?ID=${id}`;
   for (let i = 0; i < tries; i++) {
     try {

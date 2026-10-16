@@ -45,7 +45,8 @@ The app reads `data/fallen.json`:
 The National Insurance Institute's memorial site is the official list. Its search pages are blocked outside Israel, so the crawler loads each person's page by ID:
 ```bash
 NODE_USE_ENV_PROXY=1 node scripts/scrape-laad.mjs 30000 48000 4   # writes data/raw/laad.jsonl; safe to rerun
-node scripts/build-laad.mjs                                       # writes data/fallen.json
+NODE_USE_ENV_PROXY=1 node scripts/scrape-laad-bio.mjs 8           # biographies for pages crawled before bios were saved
+node scripts/build-laad.mjs                                       # writes data/fallen.json and data/bio/<id>.json
 ```
 The site gives the Hebrew date of death. That date is used when it matches the Gregorian date or the day after (a death after sunset); otherwise the Gregorian date is used. Before publishing, get the National Insurance Institute's permission or confirm its terms of use allow this.
 
