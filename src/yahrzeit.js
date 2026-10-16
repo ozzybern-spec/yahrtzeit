@@ -37,6 +37,22 @@ export function yahrzeitsOn(people, hd) {
   return people.filter((p) => yahrzeitIn(p, hyear)?.abs() === abs);
 }
 
+/**
+ * Index of yahrzeits for one Hebrew year: Map<absoluteDay, person[]>.
+ * Lets the UI look up many days without rescanning every record.
+ */
+export function buildIndex(people, hyear) {
+  const index = new Map();
+  for (const p of people) {
+    const y = yahrzeitIn(p, hyear);
+    if (!y) continue;
+    const abs = y.abs();
+    if (!index.has(abs)) index.set(abs, []);
+    index.get(abs).push(p);
+  }
+  return index;
+}
+
 /** Next upcoming yahrzeit (HDate) on or after `hd`. */
 export function nextYahrzeit(person, hd) {
   const y = hd.getFullYear();

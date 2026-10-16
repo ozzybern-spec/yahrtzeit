@@ -2,12 +2,19 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>יזכור — לוח יארצייט</title>
   <meta name="description" content="Daily yahrzeit list for Israel's fallen soldiers and victims of terror.">
+  <meta name="theme-color" content="#f7f3ea" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f1216" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=Heebo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@400;500;600;700&family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="src/styles.css">
   <script type="importmap">
     { "imports": { "@hebcal/hdate": "https://cdn.jsdelivr.net/npm/@hebcal/hdate@0.22.8/+esm" } }
@@ -15,56 +22,102 @@
   <script type="module" src="src/app.js"></script>
 </head>
 <body>
-  <header class="top">
-    <div class="wrap top-row">
+  <div class="app">
+    <header class="appbar">
       <div class="brand">
-        <span class="flame" aria-hidden="true"></span>
-        <div>
-          <h1 data-t="title"></h1>
-          <p class="tagline" data-t="tagline"></p>
+        <span class="candle" aria-hidden="true"><span class="flame"></span></span>
+        <span class="brand-name" data-t="appName"></span>
+      </div>
+      <button id="lang" class="pill-btn" type="button"></button>
+    </header>
+
+    <main>
+      <!-- Today -->
+      <section id="view-today" class="view">
+        <div class="hero" id="hero">
+          <button id="prev" class="hero-arrow" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <button id="date-btn" class="hero-date" type="button">
+            <span id="hebrew-date" class="hebrew-date"></span>
+            <span id="greg-date" class="greg-date"></span>
+          </button>
+          <button id="next" class="hero-arrow" type="button"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+          <input id="date-input" class="visually-hidden" type="date" tabindex="-1" aria-hidden="true">
+          <div class="hero-row">
+            <label class="switch">
+              <input id="after-sunset" type="checkbox" role="switch">
+              <span class="track"><span class="thumb"></span></span>
+              <span class="switch-label"><svg viewBox="0 0 24 24"><path d="M12 3a7 7 0 1 0 9 9 9 9 0 0 1-9-9z"/></svg><span data-t="afterSunset"></span></span>
+            </label>
+            <button id="today-btn" class="chip-btn" type="button" data-t="backToToday" hidden></button>
+          </div>
+          <p id="demo" class="demo" hidden><span data-t="demo"></span></p>
         </div>
-      </div>
-      <button id="lang" class="ghost" type="button"></button>
-    </div>
-  </header>
 
-  <main class="wrap">
-    <p id="demo" class="demo" data-t="demo" hidden></p>
+        <div class="strip-wrap"><div id="strip" class="strip" role="tablist"></div></div>
 
-    <section class="day">
-      <div class="day-nav">
-        <button id="prev" class="icon" type="button">‹</button>
-        <div class="day-label">
-          <p id="hebrew-date" class="hebrew-date"></p>
-          <p id="greg-date" class="greg-date"></p>
+        <div class="segmented" data-filters role="group">
+          <button type="button" data-cat="all" data-t="all"></button>
+          <button type="button" data-cat="soldier" data-t="soldierShort"></button>
+          <button type="button" data-cat="terror" data-t="terrorShort"></button>
         </div>
-        <button id="next" class="icon" type="button">›</button>
-      </div>
-      <div class="day-controls">
-        <button id="today" type="button" data-t="today"></button>
-        <input id="date-input" type="date" aria-label="date">
-        <label class="sunset"><input id="after-sunset" type="checkbox"> <span data-t="afterSunset"></span></label>
-      </div>
-    </section>
 
-    <section class="tools">
-      <input id="search" type="search" autocomplete="off">
-      <div class="filters" role="group">
-        <button type="button" data-cat="all" data-t="all"></button>
-        <button type="button" data-cat="soldier" data-t="soldier"></button>
-        <button type="button" data-cat="terror" data-t="terror"></button>
-      </div>
-    </section>
+        <h2 id="count" class="section-title" aria-live="polite"></h2>
+        <div id="list" class="list"></div>
+      </section>
 
-    <p id="count" class="count" aria-live="polite"></p>
-    <section id="list" class="list"></section>
-  </main>
+      <!-- Search -->
+      <section id="view-search" class="view" hidden>
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="search" type="search" autocomplete="off" enterkeyhint="search">
+        </div>
+        <div class="segmented" data-filters role="group">
+          <button type="button" data-cat="all" data-t="all"></button>
+          <button type="button" data-cat="soldier" data-t="soldierShort"></button>
+          <button type="button" data-cat="terror" data-t="terrorShort"></button>
+        </div>
+        <h2 id="search-count" class="section-title"></h2>
+        <div id="results" class="list"></div>
+      </section>
 
-  <footer class="wrap foot">
-    <p data-t="footer"></p>
-    <p><span data-t="sources"></span>:
-      <a href="https://www.izkor.gov.il" rel="noopener">izkor.gov.il</a> ·
-      <a href="https://laad.btl.gov.il" rel="noopener">laad.btl.gov.il</a></p>
-  </footer>
+      <!-- About -->
+      <section id="view-about" class="view" hidden>
+        <div class="about-card">
+          <span class="candle big" aria-hidden="true"><span class="flame"></span></span>
+          <h2 data-t="aboutTitle"></h2>
+          <p data-t="aboutBody"></p>
+          <p class="muted" data-t="aboutCalc"></p>
+        </div>
+        <div class="settings">
+          <button id="lang-row" class="row" type="button">
+            <span>🌐</span><span id="lang-row-label" data-t="langLabel"></span><span class="chev"></span>
+          </button>
+          <button id="install" class="row" type="button" hidden>
+            <span>📲</span><span data-t="install"></span><span class="chev"></span>
+          </button>
+          <a class="row" href="https://www.izkor.gov.il" target="_blank" rel="noopener">
+            <span>🕯️</span><span>izkor.gov.il — <span data-t="soldier"></span></span><span class="chev"></span>
+          </a>
+          <a class="row" href="https://laad.btl.gov.il" target="_blank" rel="noopener">
+            <span>🕯️</span><span>laad.btl.gov.il — <span data-t="terror"></span></span><span class="chev"></span>
+          </a>
+        </div>
+        <p class="footer-note" data-t="footer"></p>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button type="button" data-view="today"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span data-t="tabToday"></span></button>
+      <button type="button" data-view="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span data-t="tabSearch"></span></button>
+      <button type="button" data-view="about"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></svg><span data-t="tabAbout"></span></button>
+    </nav>
+  </div>
+
+  <dialog id="sheet" class="sheet">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div id="sheet-body"></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
 </body>
 </html>

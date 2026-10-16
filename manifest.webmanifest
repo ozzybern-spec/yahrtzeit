@@ -1,0 +1,15 @@
+{
+  "name": "יזכור — לוח יארצייט",
+  "short_name": "יזכור",
+  "description": "Daily yahrzeit list for Israel's fallen soldiers and victims of terror.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f3ea",
+  "theme_color": "#1f3f6e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
