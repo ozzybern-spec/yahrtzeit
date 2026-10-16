@@ -21,8 +21,17 @@ Hebrew/Gregorian mismatch | 40732 | גניה פולייס | בג' בחשוון �
 Hebrew/Gregorian mismatch | 45630 | איבט שמילוביץ | בב' בסיון תשפ"ה, 16/6/2025
 Hebrew/Gregorian mismatch | izkor-45760 | יוסף (יוסי) פילצקי | א' בסיון תשכ"ז, 11-6-1967
 Hebrew/Gregorian mismatch | izkor-4713 | דניאל קריגר | ו' בשבט תש"י, 21-1-1950
+Hebrew/Gregorian mismatch | izkor-510436 | מנחם (מלמל) רייך | ח' באייר תשמ"ג, 19-4-1983
+Hebrew/Gregorian mismatch | izkor-510553 | משה שטורם | ג' באלול תשמ"ג, 14-8-1983
 Hebrew/Gregorian mismatch | izkor-510575 | אליהו עזריה | כ"ג באלול תשמ"ג, 3-9-1983
+Hebrew/Gregorian mismatch | izkor-510964 | גבריאל גלם | כ"ח בתשרי תשמ"ז, 21-10-1984
+Hebrew/Gregorian mismatch | izkor-511325 | צבי מילר | ו' בתמוז תשמ"ו, 11-7-1986
+Hebrew/Gregorian mismatch | izkor-512013 | ריאד סמארה | כ"ב בשבט תשמ"ט, 26-1-1989
+Hebrew/Gregorian mismatch | izkor-512307 | יוסף ברנס | ל' בניסן תש"ן, 23-4-1990
+Hebrew/Gregorian mismatch | izkor-514679 | גרשון ליכטמן | י"ח בתמוז תשנ"ו, 5-5-1996
+Hebrew/Gregorian mismatch | izkor-517883 | אלכסנדר צ'רני | כ"ג בכסלו תשע"א, 28-11-2010
 Hebrew/Gregorian mismatch | izkor-77121 | שמואל איזן | כ' באייר תשכ"ב, 29-5-1962
+Hebrew/Gregorian mismatch | izkor-802381 | זיו אביגדור הראל | כ"ט בניסן תשפ"ד, 20-4-2024
 Hebrew/Gregorian mismatch | izkor-91232 | רות (רותינקה) לוי | כ' בתמוז תשכ"ח, 16-6-1968
 Hebrew/Gregorian mismatch | izkor-92280 | חיים שניידרמן | כ' באייר תש"ח, 26-5-1948
 Hebrew/Gregorian mismatch | izkor-96163 | מנחם קאופמן | כ"ז באלול תשל"ז, 8-9-1977

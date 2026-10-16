@@ -44,6 +44,8 @@ function hdateFor(date) {
   return state.afterSunset ? hd.next() : hd;
 }
 
+let bothCategories = null;
+const hasBothCategories = () => (bothCategories ??= new Set(state.people.map((x) => x.category)).size > 1);
 const passesCategory = (p) => state.category === 'all' || p.category === state.category;
 const passes = (p) => passesCategory(p) && (state.period === 'all' || p.period === state.period);
 
@@ -138,7 +140,8 @@ function summary(p, L, inGroup) {
 function card(p, { showNext = false, inGroup = false } = {}) {
   const t = strings[state.lang];
   const L = state.lang;
-  const multiCat = new Set(state.people.map((x) => x.category)).size > 1;
+  // The category label only helps when both categories are on screen.
+  const multiCat = state.category === 'all' && hasBothCategories();
 
   let badge;
   if (showNext) {
@@ -216,7 +219,7 @@ async function openSheet(base) {
       el('h2', { class: 'sheet-name', dir: 'auto' }, pick(p.name, L)),
       p.nick && el('p', { class: 'sheet-nick', dir: 'rtl' }, `(${p.nick})`),
       (p.father || p.parents) && el('p', { class: 'sheet-prayer', dir: 'auto' }, pn),
-      new Set(state.people.map((x) => x.category)).size > 1 && el('span', { class: `tag ${p.category}` }, t[p.category]),
+      hasBothCategories() && el('span', { class: `tag ${p.category}` }, t[p.category]),
     ),
     el('dl', { class: 'details' },
       detailRow(t.dateOfDeath, `${fmtHebrew(died, L)}\n${fmtGreg(parseISO(p.died), L)}`),
@@ -513,6 +516,7 @@ async function main() {
   const res = await fetch('data/index.json');
   const data = await res.json();
   state.people = data.people.map(expand);
+  bothCategories = null;
   state.demo = Boolean(data.demo);
   indexes.clear();
   render();
