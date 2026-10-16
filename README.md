@@ -9,7 +9,9 @@ A daily yahrzeit list for Israel's fallen soldiers and security personnel and fo
 - **Details panel:** tap a name to see all of the person's details, copy "Ploni ben/bat Ploni" for prayer, share, or open the official record.
 - **Search** by name, father's name or town, with each result's next yahrzeit.
 - **Filters:** civilians or security forces, and by war (official war dates; see `src/periods.js`). Neither official list records how a soldier died, so there is no battle/terror/accident filter.
-- **Hebrew and English**, with right-to-left layout in Hebrew. Fonts are Noto Serif Hebrew for names and dates and Rubik for the interface.
+- **Hebrew and English**, with right-to-left layout in Hebrew. English names come from izkor.gov.il; the rest (all civilians, about 1,200 soldiers) are transliterated via `data/en/names.json` and places via `data/en/places.json` (see `scripts/english.mjs`). Biographies exist in Hebrew only; in English mode they link to the official page through Google Translate.
+- **Calendar:** tap the date for a Hebrew month view with the number remembered each day.
+- **Timeline tab:** people remembered by year of death, civilians stacked on security forces, war periods shaded; tap a year to list its names.
 - **Installable app:** it can be added to a phone's home screen and works offline.
 - Light and dark modes. No build step and no backend, so it can be hosted on GitHub Pages.
 

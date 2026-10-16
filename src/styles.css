@@ -11,10 +11,10 @@
   --accent-ink: #17120a;
   --gold: #e2b467;
   --glow: rgba(240, 176, 82, .38);
-  --soldier: #a8c79f;
-  --soldier-soft: #22301f;
-  --terror: #e2aa9c;
-  --terror-soft: #36241f;
+  --soldier: #3987e5;
+  --soldier-soft: #1b2a3f;
+  --terror: #d95926;
+  --terror-soft: #3a2218;
   --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 8px 24px rgba(0, 0, 0, .25);
   --serif: 'Noto Serif Hebrew', 'Frank Ruhl Libre', Georgia, serif;
   --sans: 'Rubik', system-ui, -apple-system, sans-serif;
@@ -33,10 +33,10 @@
   --accent-ink: #ffffff;
   --gold: #b97b1f;
   --glow: rgba(234, 160, 52, .45);
-  --soldier: #4a6b45;
-  --soldier-soft: #e6eedf;
-  --terror: #8a4a3f;
-  --terror-soft: #f4e4de;
+  --soldier: #2a78d6;
+  --soldier-soft: #e3eefb;
+  --terror: #eb6834;
+  --terror-soft: #fbe7dd;
   --shadow: 0 1px 2px rgba(40, 30, 10, .05), 0 6px 20px rgba(40, 30, 10, .06);
   color-scheme: light;
 }
@@ -293,8 +293,8 @@ html[dir='ltr'] .hebrew-date { font-size: clamp(1.7rem, 7vw, 2.3rem); }
 .sheet-name { margin: 10px 0 0; font: 700 1.7rem/1.25 var(--serif); }
 .sheet-prayer { margin: 0; color: var(--muted); font: 500 1.05rem/1.4 var(--serif); }
 .tag { margin-top: 4px; font-size: .78rem; padding: 3px 10px; border-radius: 99px; }
-.tag.soldier { background: var(--soldier-soft); color: var(--soldier); }
-.tag.terror { background: var(--terror-soft); color: var(--terror); }
+.tag.soldier { background: var(--soldier-soft); color: var(--ink); }
+.tag.terror { background: var(--terror-soft); color: var(--ink); }
 .details { margin: 18px 0 0; padding: 4px 16px; background: var(--surface-2); border-radius: 16px; }
 .detail { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; }
 .detail + .detail { border-top: 1px solid var(--line); }
@@ -320,6 +320,39 @@ html[dir='rtl'] .detail dd { text-align: left; }
 .action svg { width: 19px; height: 19px; }
 .action.primary { background: var(--accent); color: var(--accent-ink); }
 .sheet-close { display: block; width: 100%; height: 44px; margin-top: 10px; color: var(--muted); border-radius: 14px; }
+
+/* ---------- Timeline ---------- */
+.tl-hero { text-align: center; margin: 14px 0 6px; }
+.tl-total { margin: 0; font: 600 2.2rem/1.1 var(--sans); }
+.tl-hero .muted { margin: 4px 0 0; }
+.tl-card { position: relative; margin-top: 14px; padding: 14px 12px 12px; background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); }
+.tl-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; color: var(--muted); margin-bottom: 8px; }
+.tl-key { display: inline-flex; align-items: center; gap: 6px; }
+.tl-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 4px; }
+.tl-swatch.soldier { background: var(--soldier); }
+.tl-swatch.terror { background: var(--terror); }
+.tl-chart-wrap { display: flex; gap: 6px; direction: ltr; }
+.tl-axis { position: relative; flex: none; width: 30px; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tl-axis span { position: absolute; right: 0; }
+.tl-scroll { overflow-x: auto; flex: 1; min-width: 0; scrollbar-width: thin; }
+/* Undo the icon defaults (22px, stroked) for the chart. */
+.tl-scroll svg { display: block; width: auto; height: auto; stroke: none; fill: none; }
+.tl-grid { stroke: var(--line); stroke-width: 1; }
+.tl-war { fill: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+.tl-war.active { fill: color-mix(in srgb, var(--gold) 22%, transparent); }
+.tl-bar.soldier { fill: var(--soldier); }
+.tl-bar.terror { fill: var(--terror); }
+.tl-sel { fill: none; stroke: var(--ink); stroke-width: 1.5; rx: 3; }
+.tl-hit { fill: transparent; cursor: pointer; }
+.tl-label { font: 500 10px var(--sans); fill: var(--muted); }
+.tl-tip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: .88rem; }
+.tl-tip strong { font: 700 1rem var(--serif); }
+.tl-tip .chip-btn { margin-inline-start: auto; }
+.tl-table { margin-top: 8px; max-height: 320px; overflow-y: auto; }
+.tl-table table { width: 100%; border-collapse: collapse; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.tl-table th, .tl-table td { padding: 6px 8px; text-align: start; border-bottom: 1px solid var(--line); }
+.tl-table th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--surface); }
+.year-chip { margin-top: 10px; }
 
 /* ---------- Calendar ---------- */
 .cal-head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; margin-top: 6px; }
