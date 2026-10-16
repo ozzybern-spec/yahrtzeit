@@ -135,6 +135,20 @@
     <div id="sheet-body"></div>
   </dialog>
 
+  <dialog id="calendar" class="sheet calendar">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="cal-head">
+      <button id="cal-prev" class="hero-arrow" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="cal-titles"><h2 id="cal-title"></h2><p id="cal-greg"></p></div>
+      <button id="cal-next" class="hero-arrow" type="button"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div id="cal-grid" class="cal-grid"></div>
+    <div class="cal-foot">
+      <button id="cal-today" class="chip-btn" type="button" data-t="today"></button>
+      <label class="cal-jump"><span data-t="gregJump"></span><input id="cal-date" type="date"></label>
+    </div>
+  </dialog>
+
   <div id="toast" class="toast" role="status"></div>
 </body>
 </html>

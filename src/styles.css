@@ -308,6 +308,7 @@ html[dir='rtl'] .detail dd { text-align: left; }
 .bio-text p { margin: 0 0 10px; }
 .bio-text p:last-child { margin-bottom: 0; }
 .bio.collapsed .bio-text { max-height: 11.5em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+.bio-translate { display: inline-block; margin: -2px 0 10px; color: var(--gold); font-size: .88rem; }
 .bio-more { margin-top: 6px; color: var(--gold); font-weight: 500; font-size: .92rem; }
 .report { display: block; margin-top: 14px; text-align: center; font-size: .82rem; color: var(--muted); }
 .sheet-context { color: var(--muted); font-size: .92rem; text-align: center; margin: 14px 0 0; }
@@ -319,6 +320,29 @@ html[dir='rtl'] .detail dd { text-align: left; }
 .action svg { width: 19px; height: 19px; }
 .action.primary { background: var(--accent); color: var(--accent-ink); }
 .sheet-close { display: block; width: 100%; height: 44px; margin-top: 10px; color: var(--muted); border-radius: 14px; }
+
+/* ---------- Calendar ---------- */
+.cal-head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; margin-top: 6px; }
+.cal-titles { text-align: center; }
+.cal-titles h2 { margin: 0; font: 700 1.5rem/1.2 var(--serif); }
+.cal-titles p { margin: 2px 0 0; color: var(--muted); font-size: .85rem; }
+[dir='rtl'] .cal-head .hero-arrow svg { transform: scaleX(-1); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 14px; }
+.cal-wd { text-align: center; font-size: .75rem; color: var(--muted); padding-bottom: 4px; }
+.cal-cell {
+  min-width: 0; height: 58px; border-radius: 12px; background: var(--surface-2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+}
+.cal-cell.cal-blank { background: none; }
+.cal-heb { font: 700 1.05rem/1.1 var(--serif); }
+.cal-gd { font-size: .62rem; color: var(--muted); }
+.cal-count { min-height: 13px; font-size: .66rem; font-weight: 600; color: var(--gold); }
+.cal-cell.today { box-shadow: inset 0 0 0 1.5px var(--gold); }
+.cal-cell.selected { background: var(--gold); color: var(--accent-ink); }
+.cal-cell.selected .cal-gd, .cal-cell.selected .cal-count { color: inherit; opacity: .8; }
+.cal-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.cal-jump { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .85rem; }
+.cal-jump input { border: 0; border-radius: 10px; padding: 6px 8px; background: var(--surface-2); color: var(--ink); }
 
 /* ---------- Toast ---------- */
 .toast {

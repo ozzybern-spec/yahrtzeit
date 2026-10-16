@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { HDate } from '@hebcal/hdate';
 import { parseISO, toISO } from '../src/yahrzeit.js';
 import { loadLaad, parseDeath } from './build-laad.mjs';
+import { englishMaps, englishName, englishPlace } from './english.mjs';
 
 const root = new URL('../data/', import.meta.url);
 const titleCase = (s) => (s ? s.toLowerCase().replace(/(^|[\s'-])\p{L}/gu, (c) => c.toUpperCase()) : s);
@@ -61,14 +62,16 @@ export function toSoldier(r) {
   };
 }
 
-function loadIzkor() {
+function readIzkorRaw() {
   const file = new URL('raw/izkor.jsonl', root);
-  if (!existsSync(file)) return { people: [], review: [] };
+  return existsSync(file) ? readFileSync(file, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
+}
+
+function loadIzkor(raw) {
   const people = [];
   const review = [];
   const seen = new Set();
-  for (const l of readFileSync(file, 'utf8').split('\n').filter(Boolean)) {
-    const r = JSON.parse(l);
+  for (const r of raw) {
     if (seen.has(r.legacy_id)) continue;
     seen.add(r.legacy_id);
     const p = toSoldier(r);
@@ -91,6 +94,7 @@ function indexEntry(p) {
   if (p.age) o.a = p.age;
   if (p.hebrewDate) o.h = hebrewArr(p.hebrewDate);
   if (p.placeShort?.he || p.place?.he) o.l = p.placeShort?.he || p.place.he;
+  if (p.placeEn) o.le = p.placeEn;
   if (p.rank?.he) o.r = p.rank.he;
   if (p.rank?.en) o.re = p.rank.en;
   if (p.unit?.he) o.u = p.unit.he;
@@ -109,8 +113,25 @@ function details(p) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const laad = loadLaad();
-  const izkor = loadIzkor();
+  const raw = readIzkorRaw();
+  const izkor = loadIzkor(raw);
   const people = [...laad.people, ...izkor.people].sort((a, b) => a.died.localeCompare(b.died));
+
+  // Fill English where the sources have none (official spellings first; see english.mjs).
+  const maps = englishMaps(raw);
+  const missingEn = { name: 0, place: 0 };
+  for (const p of people) {
+    p.name.en ||= englishName(p.name.he, maps);
+    if (!p.name.en) missingEn.name++;
+    if (p.hometown?.he) p.hometown.en ||= englishPlace(p.hometown.he, maps);
+    const place = p.placeShort?.he || p.place?.he;
+    if (place) {
+      p.placeEn = englishPlace(place, maps);
+      if (!p.placeEn) missingEn.place++;
+    }
+    if (p.unit?.he) p.unit.en ||= maps.units.get(p.unit.he);
+    if (p.rank?.he) p.rank.en ||= maps.ranks.get(p.rank.he);
+  }
 
   const peopleDir = new URL('people/', root);
   rmSync(peopleDir, { recursive: true, force: true });
@@ -130,5 +151,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   console.log(`civilians: ${laad.people.length}, security forces: ${izkor.people.length}, total: ${people.length}`);
   console.log(`needs review: ${laad.review.length + izkor.review.length}`);
+  console.log(`without English: ${missingEn.name} names, ${missingEn.place} places of attack`);
 }
 

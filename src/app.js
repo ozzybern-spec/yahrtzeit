@@ -1,4 +1,4 @@
-import { HDate, gematriya } from '@hebcal/hdate';
+import { HDate, gematriya, daysInMonth } from '@hebcal/hdate';
 import { strings } from './i18n.js';
 import { PERIODS, OTHER, periodOf } from './periods.js';
 import {
@@ -67,7 +67,7 @@ function expand(o) {
     age: o.a,
     died: o.d,
     hebrewDate: o.h && { yy: o.h[0], mm: o.h[1], dd: o.h[2] },
-    placeShort: both(o.l),
+    placeShort: both(o.l, o.le),
     rank: both(o.r, o.re),
     unit: both(o.u, o.ue),
     hometown: both(o.t, o.te),
@@ -171,12 +171,23 @@ function detailRow(label, value) {
 const CORRECTIONS_URL = 'https://laad.btl.gov.il/Web/He/ContactUs/Default.aspx';
 const IZKOR_CONTACT_URL = 'https://www.izkor.gov.il/contact';
 
+/** The official page through Google Translate (the sources publish Hebrew biographies only). */
+function translatedUrl(source) {
+  const u = new URL(source);
+  u.searchParams.set('_x_tr_sl', 'iw');
+  u.searchParams.set('_x_tr_tl', 'en');
+  u.hostname = `${u.hostname.replace(/-/g, '--').replace(/\./g, '-')}.translate.goog`;
+  return u.toString();
+}
+
 /** Biography from the official record, collapsed to a few lines at first. */
-function bioSection(cv) {
+function bioSection(cv, source) {
   const t = strings[state.lang];
-  const text = el('div', { class: 'bio-text', dir: 'rtl' }, ...cv.split(/\n{2,}/).map((para) => el('p', {}, para)));
+  const text = el('div', { class: 'bio-text', dir: 'rtl', lang: 'he' }, ...cv.split(/\n{2,}/).map((para) => el('p', {}, para)));
   const more = el('button', { class: 'bio-more', type: 'button', hidden: true }, t.readMore);
-  const box = el('section', { class: 'bio collapsed' }, el('h3', {}, t.bioTitle), text, more);
+  const box = el('section', { class: 'bio collapsed' }, el('h3', {}, t.bioTitle),
+    state.lang === 'en' && source && el('a', { class: 'bio-translate', href: translatedUrl(source), target: '_blank', rel: 'noopener' }, t.readTranslated),
+    text, more);
   more.addEventListener('click', () => { box.classList.remove('collapsed'); more.hidden = true; });
   requestAnimationFrame(() => { more.hidden = text.scrollHeight <= text.clientHeight + 4; });
   return box;
@@ -233,7 +244,7 @@ async function openSheet(base) {
       detailRow(t.burial, p.mia ? t.burialUnknown : pick(p.burial, L)),
       detailRow(t.survivors(p.gender), pick(p.survivors, L)),
     ),
-    p.cv && bioSection(p.cv),
+    p.cv && bioSection(p.cv, p.source),
     p.context && el('p', { class: 'sheet-context', dir: 'auto' }, pick(p.context, L)),
     el('div', { class: 'actions' },
       copy,
@@ -267,6 +278,74 @@ function toast(msg) {
   n.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => n.classList.remove('show'), 1800);
+}
+
+/* ---------- Calendar ---------- */
+
+let calMonth = null; // HDate of the first day of the month on screen
+
+const monthTitle = (hd, L) => (L === 'he'
+  ? hd.renderGematriya(true).split(' ').slice(1).join(' ')
+  : `${hd.getMonthName()} ${hd.getFullYear()}`);
+
+function openCalendar() {
+  const hd = hdateFor(state.date);
+  calMonth = new HDate(1, hd.getMonth(), hd.getFullYear());
+  renderCalendar();
+  const dlg = $('#calendar');
+  dlg.showModal();
+  document.activeElement?.blur();
+  requestAnimationFrame(() => dlg.classList.add('open'));
+}
+
+function closeCalendar() {
+  const dlg = $('#calendar');
+  dlg.classList.remove('open');
+  setTimeout(() => dlg.close(), 220);
+}
+
+function goTo(date) {
+  state.date = startOfDay(date);
+  state.afterSunset = false;
+  state.view = 'today';
+  closeCalendar();
+  render();
+}
+
+/** A month of the Hebrew calendar; each day shows how many are remembered on it. */
+function renderCalendar() {
+  const t = strings[state.lang];
+  const L = state.lang;
+  const m = calMonth.getMonth();
+  const y = calMonth.getFullYear();
+  const n = daysInMonth(m, y);
+  const first = calMonth.greg();
+  const last = new HDate(n, m, y).greg();
+  const today = new HDate(startOfDay(new Date())).abs();
+  const selected = hdateFor(state.date).abs();
+
+  $('#cal-title').textContent = monthTitle(calMonth, L);
+  const gm = (d) => d.toLocaleDateString(L === 'he' ? 'he-IL' : 'en-GB', { month: 'long', year: 'numeric' });
+  $('#cal-greg').textContent = gm(first) === gm(last) ? gm(first) : `${gm(first)} – ${gm(last)}`;
+
+  const week = [];
+  for (let i = 0; i < 7; i++) week.push(el('span', { class: 'cal-wd' }, fmtGreg(new Date(2026, 0, 4 + i), L, { weekday: 'narrow' })));
+  const cells = [];
+  for (let i = 0; i < calMonth.getDay(); i++) cells.push(el('span', { class: 'cal-cell cal-blank' }));
+  for (let d = 1; d <= n; d++) {
+    const hd = new HDate(d, m, y);
+    const count = (indexFor(y).get(hd.abs()) || []).filter(passes).length;
+    cells.push(el('button', {
+      class: `cal-cell${hd.abs() === today ? ' today' : ''}${hd.abs() === selected ? ' selected' : ''}`,
+      type: 'button',
+      onclick: () => goTo(hd.greg()),
+    },
+    el('span', { class: 'cal-heb' }, L === 'he' ? gematriya(d) : String(d)),
+    el('span', { class: 'cal-gd' }, String(hd.greg().getDate())),
+    el('span', { class: 'cal-count' }, count ? String(count) : '')));
+  }
+  $('#cal-grid').replaceChildren(...week, ...cells);
+  $('#cal-date').value = toISO(state.date);
 }
 
 /* ---------- Views ---------- */
@@ -422,6 +501,8 @@ function render() {
   $('#prev').setAttribute('aria-label', t.prev);
   $('#next').setAttribute('aria-label', t.next);
   $('#date-btn').setAttribute('aria-label', t.pickDate);
+  $('#cal-prev').setAttribute('aria-label', t.prevMonth);
+  $('#cal-next').setAttribute('aria-label', t.nextMonth);
 
   for (const b of $$('[data-filters] button')) b.setAttribute('aria-pressed', String(b.dataset.cat === state.category));
   const cats = new Set(state.people.map((p) => p.category));
@@ -442,10 +523,21 @@ function bind() {
   $('#prev').addEventListener('click', () => shiftDay(-1));
   $('#next').addEventListener('click', () => shiftDay(1));
   $('#today-btn').addEventListener('click', () => { state.date = startOfDay(new Date()); render(); });
-  $('#date-btn').addEventListener('click', () => {
-    const inp = $('#date-input');
-    try { inp.showPicker(); } catch { inp.focus(); inp.click(); }
+  $('#date-btn').addEventListener('click', openCalendar);
+  $('#cal-prev').addEventListener('click', () => {
+    const prev = calMonth.prev();
+    calMonth = new HDate(1, prev.getMonth(), prev.getFullYear());
+    renderCalendar();
   });
+  $('#cal-next').addEventListener('click', () => {
+    calMonth = new HDate(daysInMonth(calMonth.getMonth(), calMonth.getFullYear()), calMonth.getMonth(), calMonth.getFullYear()).next();
+    renderCalendar();
+  });
+  $('#cal-today').addEventListener('click', () => goTo(new Date()));
+  $('#cal-date').addEventListener('change', (e) => { if (e.target.value) goTo(parseISO(e.target.value)); });
+  const cal = $('#calendar');
+  cal.addEventListener('click', (e) => { if (e.target === cal) closeCalendar(); });
+  cal.addEventListener('cancel', (e) => { e.preventDefault(); closeCalendar(); });
   $('#date-input').addEventListener('change', (e) => { if (e.target.value) { state.date = parseISO(e.target.value); render(); } });
   $('#after-sunset').addEventListener('change', (e) => { state.afterSunset = e.target.checked; render(); });
   $('#search').addEventListener('input', (e) => { state.query = e.target.value; renderSearch(); });
@@ -488,7 +580,7 @@ function bind() {
 
   // Keyboard: arrow keys move days on the Today view.
   document.addEventListener('keydown', (e) => {
-    if (state.view !== 'today' || e.target.matches('input') || $('#sheet').open) return;
+    if (state.view !== 'today' || e.target.matches('input') || $('#sheet').open || $('#calendar').open) return;
     const rtl = state.lang === 'he';
     if (e.key === 'ArrowRight') shiftDay(rtl ? -1 : 1);
     if (e.key === 'ArrowLeft') shiftDay(rtl ? 1 : -1);
