@@ -5,12 +5,13 @@ A daily yahrzeit list for Israel's fallen soldiers and victims of terror, from 1
 > **Status: prototype with demo data.** Every name in `data/fallen.json` is a placeholder (for example "Sample Name 0067"). No real records are included yet. See [Data](#data).
 
 ## Features
-- **Today's yahrzeits** by Hebrew date, with previous/next day, a date picker, and an "after sunset" toggle that moves to the next Hebrew day.
-- **Hebrew and English**, with the page switching to right-to-left for Hebrew. The chosen language is remembered.
-- **Filters** for fallen soldiers and victims of terror, and **search** by name or town. Search results show each person's next yahrzeit.
-- **Copy name for prayer** copies "Ploni ben/bat Ploni".
-- Light and dark modes, and a mobile layout.
-- No build step and no backend. It is a static site, so it can run on GitHub Pages.
+- **Today's yahrzeits** by Hebrew date. Go to another day with the arrows, by swiping, with the arrow keys, by tapping the date for a picker, or from the scrollable strip of days, which shows how many people are remembered on each day. An "after sunset" switch moves to the next Hebrew day.
+- **Details panel:** tap a name to see all of the person's details, copy "Ploni ben/bat Ploni" for prayer, share, or open the official record.
+- **Search** by name, father's name or town, with each result's next yahrzeit.
+- **Filters** for soldiers and victims of terror.
+- **Hebrew and English**, with right-to-left layout in Hebrew. Fonts are Noto Serif Hebrew for names and dates and Rubik for the interface.
+- **Installable app:** it can be added to a phone's home screen and works offline.
+- Light and dark modes. No build step and no backend, so it can be hosted on GitHub Pages.
 
 ## Run
 ```bash
