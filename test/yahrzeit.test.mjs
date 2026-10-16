@@ -45,3 +45,13 @@ test('prayer name uses ben/bat', () => {
   assert.equal(prayerName(p('2023-10-07', { father: { he: 'אלמוני' } }), 'he'), 'פלוני בן אלמוני');
   assert.equal(prayerName(p('2023-10-07', { gender: 'f', father: { en: 'Almoni' } }), 'en'), 'Ploni bat Almoni');
 });
+
+test('Sephardi custom moves a regular-year Adar death to Adar II', () => {
+  const x = p('2021-02-25'); // 13 Adar 5781
+  assert.equal(yahrzeitIn(x, 5784, 'II').toString(), '13 Adar II 5784');
+  assert.equal(yahrzeitIn(x, 5785, 'II').toString(), '13 Adar 5785');
+});
+
+test('prayer name uses the official parents line when present', () => {
+  assert.equal(prayerName(p('2023-10-07', { parents: 'בן אלמוני ופלונית' }), 'he'), 'פלוני בן אלמוני ופלונית');
+});

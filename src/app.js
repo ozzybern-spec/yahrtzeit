@@ -18,6 +18,7 @@ const state = {
   date: startOfDay(new Date()),
   afterSunset: false,
   category: 'all',
+  adar: store.get('adar') === 'II' ? 'II' : 'I',
   query: '',
   people: [],
   demo: false,
@@ -26,8 +27,9 @@ const state = {
 // Yahrzeit indexes per Hebrew year, rebuilt when data loads.
 const indexes = new Map();
 function indexFor(hyear) {
-  if (!indexes.has(hyear)) indexes.set(hyear, buildIndex(state.people, hyear));
-  return indexes.get(hyear);
+  const key = `${hyear}-${state.adar}`;
+  if (!indexes.has(key)) indexes.set(key, buildIndex(state.people, hyear, state.adar));
+  return indexes.get(key);
 }
 
 function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
@@ -90,7 +92,7 @@ function card(p, { showNext = false } = {}) {
 
   let badge;
   if (showNext) {
-    const up = nextYahrzeit(p, hdateFor(startOfDay(new Date())));
+    const up = nextYahrzeit(p, hdateFor(startOfDay(new Date())), state.adar);
     badge = up && `${t.nextShort} ${fmtHebrew(up, L)}`;
   } else if (nth > 0) {
     badge = t.yahrzeitNo(nth);
@@ -99,8 +101,8 @@ function card(p, { showNext = false } = {}) {
   return el('button', { class: `card ${p.category}`, type: 'button', onclick: () => openSheet(p) },
     el('span', { class: 'avatar', 'aria-hidden': 'true' }, initials(p, L)),
     el('span', { class: 'card-main' },
-      el('span', { class: 'card-name' }, pick(p.name, L)),
-      el('span', { class: 'card-sub' }, sub),
+      el('span', { class: 'card-name', dir: 'auto' }, pick(p.name, L)),
+      el('span', { class: 'card-sub', dir: 'auto' }, sub),
       el('span', { class: 'card-meta' },
         el('span', { class: `dot ${p.category}` }),
         t[`${p.category}Short`],
@@ -112,7 +114,7 @@ function card(p, { showNext = false } = {}) {
 }
 
 function detailRow(label, value) {
-  return value ? el('div', { class: 'detail' }, el('dt', {}, label), el('dd', {}, value)) : null;
+  return value ? el('div', { class: 'detail' }, el('dt', {}, label), el('dd', { dir: 'auto' }, value)) : null;
 }
 
 function openSheet(p) {
@@ -137,8 +139,9 @@ function openSheet(p) {
   body.replaceChildren(
     el('div', { class: 'sheet-head' },
       el('span', { class: 'candle big', 'aria-hidden': 'true' }, el('span', { class: 'flame' })),
-      el('h2', { class: 'sheet-name' }, pick(p.name, L)),
-      p.father && el('p', { class: 'sheet-prayer' }, pn),
+      el('h2', { class: 'sheet-name', dir: 'auto' }, pick(p.name, L)),
+      p.nick && el('p', { class: 'sheet-nick', dir: 'rtl' }, `״${p.nick}״`),
+      (p.father || p.parents) && el('p', { class: 'sheet-prayer', dir: 'auto' }, pn),
       el('span', { class: `tag ${p.category}` }, t[p.category]),
     ),
     el('dl', { class: 'details' },
@@ -148,8 +151,9 @@ function openSheet(p) {
       detailRow(t.rank, pick(p.rank, L)),
       detailRow(t.unit, pick(p.unit, L)),
       detailRow(t.place, pick(p.place, L)),
+      detailRow(t.burial, pick(p.burial, L)),
     ),
-    p.context && el('p', { class: 'sheet-context' }, pick(p.context, L)),
+    p.context && el('p', { class: 'sheet-context', dir: 'auto' }, pick(p.context, L)),
     el('div', { class: 'actions' },
       copy,
       share,
@@ -270,6 +274,9 @@ function render() {
   $('#date-btn').setAttribute('aria-label', t.pickDate);
 
   for (const b of $$('[data-filters] button')) b.setAttribute('aria-pressed', String(b.dataset.cat === state.category));
+  const cats = new Set(state.people.map((p) => p.category));
+  for (const f of $$('[data-filters]')) f.hidden = cats.size < 2;
+  for (const b of $$('[data-adar] button')) b.setAttribute('aria-pressed', String(b.dataset.adar === state.adar));
   for (const b of $$('.tabbar button')) b.setAttribute('aria-current', String(b.dataset.view === state.view));
   for (const v of ['today', 'search', 'about']) $(`#view-${v}`).hidden = v !== state.view;
 
@@ -299,6 +306,9 @@ function bind() {
 
   for (const b of $$('[data-filters] button')) {
     b.addEventListener('click', () => { state.category = b.dataset.cat; render(); });
+  }
+  for (const b of $$('[data-adar] button')) {
+    b.addEventListener('click', () => { state.adar = b.dataset.adar; store.set('adar', state.adar); render(); });
   }
   for (const b of $$('.tabbar button')) {
     b.addEventListener('click', () => {

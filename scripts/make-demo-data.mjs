@@ -43,7 +43,7 @@ for (let hd = new HDate(1, months.TISHREI, 5784); hd.getFullYear() === 5784; hd 
     const dd = Math.min(hd.getDate(), daysInMonth(mm, yy));
     const died = new HDate(dd, mm, yy).greg();
     const gy = died.getFullYear();
-    const terror = rand() < 0.22;
+    const terror = true; // phase 1 covers victims of terror only
     const gender = rand() < (terror ? 0.45 : 0.08) ? 'f' : 'm';
     const id = String(++n).padStart(4, '0');
     const [heTown, enTown] = pick(towns);
@@ -52,11 +52,12 @@ for (let hd = new HDate(1, months.TISHREI, 5784); hd.getFullYear() === 5784; hd 
       id: `demo-${id}`,
       category: terror ? 'terror' : 'soldier',
       name: { he: `שם לדוגמה ${id}`, en: `Sample Name ${id}` },
-      father: { he: `אב לדוגמה`, en: `Sample Father` },
+      parents: gender === 'f' ? 'בת אם ואב לדוגמה' : 'בן אם ואב לדוגמה',
       gender,
       age: terror ? int(4, 86) : int(18, 48),
       died: toISO(died),
       hometown: { he: heTown, en: enTown },
+      place: { he: `${heTown} (לדוגמה)`, en: `${enTown} (sample)` },
       ...(terror ? {} : { rank: { he: 'סמל', en: 'Sergeant' } }),
       context: terror
         ? { he: 'פיגוע (נתון לדוגמה)', en: 'Terror attack (sample data)' }
