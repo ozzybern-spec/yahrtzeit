@@ -52,7 +52,7 @@ The site gives the Hebrew date of death. That date is used when it matches the G
 **Soldiers (later phase):** the Ministry of Defense's [izkor.gov.il](https://www.izkor.gov.il).
 
 ## Deploy
-Pushing to `main` runs `.github/workflows/pages.yml`, which runs the tests and publishes to GitHub Pages. One-time setup: Settings → Pages → Source: **GitHub Actions**.
+Live at https://ozzybern-spec.github.io/israeli-yahrtzeit/. GitHub Pages publishes straight from `main` (Settings → Pages → Deploy from a branch → `main`, `/ (root)`), so pushing to `main` updates the site. `.github/workflows/test.yml` runs the tests on every push.
 
 ## Possible next steps
 - Load the real data, with permission.
