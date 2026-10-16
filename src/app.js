@@ -241,7 +241,8 @@ async function openSheet(base) {
       detailRow(t.hometown, pick(p.hometown, L)),
       detailRow(t.rank, pick(p.rank, L)),
       detailRow(t.unit, pick(p.unit, L)),
-      detailRow(t.place, pick(p.place, L)),
+      // English mode: the short English place (the official full wording is Hebrew only).
+      detailRow(t.place, L === 'en' && p.placeShort?.en ? p.placeShort.en : pick(p.place, L)),
       detailRow(t.burial, p.mia ? t.burialUnknown : pick(p.burial, L)),
       detailRow(t.survivors(p.gender), pick(p.survivors, L)),
     ),

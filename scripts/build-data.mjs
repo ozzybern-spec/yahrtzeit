@@ -15,7 +15,7 @@ import { loadLaad, parseDeath } from './build-laad.mjs';
 import { englishMaps, englishName, englishPlace } from './english.mjs';
 
 const root = new URL('../data/', import.meta.url);
-const titleCase = (s) => (s ? s.toLowerCase().replace(/(^|[\s'-])\p{L}/gu, (c) => c.toUpperCase()) : s);
+const titleCase = (s) => (s ? s.toLowerCase().replace(/(^|[\s-])\p{L}/gu, (c) => c.toUpperCase()) : s);
 const hebrewArr = (h) => (h ? [h.yy, h.mm, h.dd] : undefined);
 
 /** "6-6-1967" → "1967-06-06" */
@@ -131,6 +131,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     }
     if (p.unit?.he) p.unit.en ||= maps.units.get(p.unit.he);
     if (p.rank?.he) p.rank.en ||= maps.ranks.get(p.rank.he);
+    if (p.burial?.he) p.burial.en ||= maps.burials.get(p.burial.he.trim());
+    if (p.survivors?.he) p.survivors.en ||= maps.survivors.get(p.survivors.he);
   }
 
   const peopleDir = new URL('people/', root);

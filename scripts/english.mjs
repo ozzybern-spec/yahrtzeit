@@ -1,12 +1,13 @@
 // English for names and places. Official spellings come first: about 24,500
 // izkor.gov.il records give Hebrew/English pairs for names, towns, units and
 // ranks. Anything left is filled from data/en/names.json and data/en/places.json
-// (transliterated; edit those files to correct a spelling).
+// (transliterated; edit those files to correct a spelling). Burial places and
+// "survived by" lines come from data/en/burial.json and data/en/survivors.json.
 import { existsSync, readFileSync } from 'node:fs';
 
 const readJson = (url) => (existsSync(url) ? JSON.parse(readFileSync(url, 'utf8')) : {});
 const words = (s) => s.replace(/[()]/g, ' ').split(/\s+/).filter(Boolean);
-const titleCase = (s) => s.toLowerCase().replace(/(^|[\s'-])\p{L}/gu, (c) => c.toUpperCase());
+const titleCase = (s) => s.toLowerCase().replace(/(^|[\s-])\p{L}/gu, (c) => c.toUpperCase());
 
 /** Most common English value for each Hebrew key. */
 function majority(pairs) {
@@ -37,11 +38,15 @@ export function englishMaps(izkorRaw) {
   }
   const manualNames = readJson(new URL('../data/en/names.json', import.meta.url));
   const manualPlaces = readJson(new URL('../data/en/places.json', import.meta.url));
+  const burials = readJson(new URL('../data/en/burial.json', import.meta.url));
+  const survivors = readJson(new URL('../data/en/survivors.json', import.meta.url));
   return {
     words: new Map([...Object.entries(manualNames), ...majority(nameWords)]),
     places: new Map([...Object.entries(manualPlaces), ...majority(towns)]),
     units: majority(units),
     ranks: majority(ranks),
+    burials: new Map([...Object.entries(manualPlaces), ...majority(towns), ...Object.entries(burials)]),
+    survivors: new Map(Object.entries(survivors)),
   };
 }
 
