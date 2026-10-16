@@ -2,7 +2,7 @@
 
 A daily yahrzeit list for civilian victims of terror in Israel. Fallen soldiers are planned for a later phase. Open the site and it shows everyone whose yahrzeit falls on today's Hebrew date, so people can say *hashkavah*, learn *mishnayot* or say *Tehillim* for them.
 
-> **Status: prototype with demo data.** Every name in `data/fallen.json` is a placeholder (for example "Sample Name 0067"). No real records are included yet. See [Data](#data).
+> **Data:** 5,296 civilian victims of terror (1851–2026) from the National Insurance Institute memorial site, laad.btl.gov.il, crawled October 2026. 30 records with inconsistent or partial dates are listed in `data/needs-review.txt`.
 
 ## Features
 - **Today's yahrzeits** by Hebrew date. Go to another day with the arrows, by swiping, with the arrow keys, by tapping the date for a picker, or from the scrollable strip of days, which shows how many people are remembered on each day. An "after sunset" switch moves to the next Hebrew day.

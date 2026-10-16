@@ -136,11 +136,11 @@ function openSheet(p) {
     navigator.share({ text: t.shareText(pn, fmtHebrew(died, L)), url: location.href }).catch(() => {});
   });
 
-  body.replaceChildren(
+  body.replaceChildren(...[
     el('div', { class: 'sheet-head' },
       el('span', { class: 'candle big', 'aria-hidden': 'true' }, el('span', { class: 'flame' })),
       el('h2', { class: 'sheet-name', dir: 'auto' }, pick(p.name, L)),
-      p.nick && el('p', { class: 'sheet-nick', dir: 'rtl' }, `״${p.nick}״`),
+      p.nick && el('p', { class: 'sheet-nick', dir: 'rtl' }, `(${p.nick})`),
       (p.father || p.parents) && el('p', { class: 'sheet-prayer', dir: 'auto' }, pn),
       el('span', { class: `tag ${p.category}` }, t[p.category]),
     ),
@@ -161,7 +161,7 @@ function openSheet(p) {
         svg('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'), t.source),
     ),
     el('button', { class: 'sheet-close', type: 'button', onclick: closeSheet }, t.close),
-  );
+  ].filter(Boolean));
 
   const dlg = $('#sheet');
   dlg.showModal();

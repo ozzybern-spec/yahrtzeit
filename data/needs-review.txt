@@ -1,0 +1,30 @@
+Hebrew/Gregorian mismatch | 28664 | אליה ריגר | בכ"ח בכסלו תשס"ד, 22/11/2003
+Hebrew/Gregorian mismatch | 34536 | דמיטרי פונדיקוב | בי"ג באב תשס"ב, 23/7/2002
+Hebrew/Gregorian mismatch | 34691 | דוד דניאל גלצר | בכ"ח באב תרפ"ט, 24/8/1929
+Hebrew/Gregorian mismatch | 35787 | דב בן-עמי | בב' בתמוז תרצ"ו, 10/7/1936
+Hebrew/Gregorian mismatch | 35796 | בנימין בביוף | בט"ו באב תרצ"ח, 13/8/1938
+Hebrew/Gregorian mismatch | 35815 | צביה בביוף | בט"ו באב תרצ"ח, 13/8/1938
+Hebrew/Gregorian mismatch | 35835 | נתן זילברשטיין | בכ"א באדר תרצ"ח, 23/3/1938
+Hebrew/Gregorian mismatch | 35841 | אברהם גרדי | בי"ב בסיון תרצ"ז, 23/5/1937
+Hebrew/Gregorian mismatch | 35856 | אלתר קהת הכהן | בכ"א באייר תרצ"ו, 15/5/1936
+Hebrew/Gregorian mismatch | 35859 | הנס הניגר | בכ"ב באב תרצ"ח, 19/3/1938
+Hebrew/Gregorian mismatch | 35871 | בכור יהודה שחרור | בכ"ה באדר תרצ"ח, 28/3/1938
+Hebrew/Gregorian mismatch | 35880 | דוד חמאמי | בח' בשבט תרצ"ו, 20/1/1937
+Hebrew/Gregorian mismatch | 35886 | פנחס טישלר | בו' באדר תש"ו, 10/3/1946
+Hebrew/Gregorian mismatch | 35893 | יצחק ילובסקי | בכ"ה באייר תרצ"ו, 11/5/1936
+Hebrew/Gregorian mismatch | 35894 | אבינועם ילין | בט"ז בחשוון תרצ"ח, 23/10/1937
+Hebrew/Gregorian mismatch | 35923 | יוסף לואידור | בכ"א בניסן תרפ"א, 1/5/1921
+Hebrew/Gregorian mismatch | 35925 | זכריה לוי | בט"ו באלול תרצ"ח, 13/9/1938
+Hebrew/Gregorian mismatch | 35952 | שלום שרעבי | בכ"ח בסיון תרצ"ח, 24/6/1938
+Hebrew/Gregorian mismatch | 35994 | מנחם מנדל מינץ | בכ"א בשבט תרצ"ו, 2/2/1937
+Hebrew/Gregorian mismatch | 36002 | שאול מנשה | בי"ז בתשרי תרצ"ט, 13/10/1938
+Hebrew/Gregorian mismatch | 36010 | אשר רביטש | בכ"ג בשבט ת"ש, 12/2/1939
+Hebrew/Gregorian mismatch | 37378 | שלמה שחב | בכ"ד בשבט תשל"ו, 26/2/1976
+Hebrew/Gregorian mismatch | 38403 | ברוך דוד סגל | בכ"ח באדר ב' תרצ"ח, 28/3/1938
+Hebrew/Gregorian mismatch | 38452 | ברך קוריכמן | בי"ד באדר א' תרפ"ד, 19/3/1924
+Hebrew/Gregorian mismatch | 40732 | גניה פולייס | בג' בחשוון תשס"ה, 5/11/2005
+Hebrew/Gregorian mismatch | 45630 | איבט שמילוביץ | בב' בסיון תשפ"ה, 16/6/2025
+no usable date | 35763 | אהרון ביקוב | באייר תרס"ט, 5/1909
+no usable date | 35797 | מרדכי צבי הירש | בתשרי תשס"ז, 10/1906
+no usable date | 38448 | שמעון קובי | בחשוון תרפ"ח, 11/1927
+no usable date | 42461 | נתן רבינוביץ | בתש"י, 1950

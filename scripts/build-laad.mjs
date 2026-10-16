@@ -64,9 +64,13 @@ export function toPerson(r) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const lines = readFileSync(new URL('../data/raw/laad.jsonl', import.meta.url), 'utf8').split('\n').filter(Boolean);
   const people = [];
+  const seen = new Set();
   let skipped = 0, mismatched = 0;
   for (const l of lines) {
-    const p = toPerson(JSON.parse(l));
+    const r = JSON.parse(l);
+    if (seen.has(r.id)) continue; // a restarted crawl can record an ID twice
+    seen.add(r.id);
+    const p = toPerson(r);
     if (!p) { skipped++; continue; }
     if (p.dateMismatch) { mismatched++; delete p.dateMismatch; }
     people.push(p);
