@@ -1,0 +1,25 @@
+{
+  "name": "israeli-yahrtzeit",
+  "version": "0.1.0",
+  "description": "Daily yahrzeit list for Israel's fallen soldiers and victims of terror",
+  "scripts": {
+    "start": "npx --yes serve@14.2.4 -l 8080 .",
+    "test": "node --test test/*.test.mjs",
+    "demo-data": "node scripts/make-demo-data.mjs",
+    "import": "node scripts/csv-to-json.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ozzybern-spec/israeli-yahrtzeit.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ozzybern-spec/israeli-yahrtzeit/issues"
+  },
+  "homepage": "https://github.com/ozzybern-spec/israeli-yahrtzeit#readme",
+  "devDependencies": {
+    "@hebcal/hdate": "0.22.8"
+  },
+  "private": true,
+  "type": "module"
+}

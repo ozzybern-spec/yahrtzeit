@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>יזכור — לוח יארצייט</title>
+  <meta name="description" content="Daily yahrzeit list for Israel's fallen soldiers and victims of terror.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=Heebo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles.css">
+  <script type="importmap">
+    { "imports": { "@hebcal/hdate": "https://cdn.jsdelivr.net/npm/@hebcal/hdate@0.22.8/+esm" } }
+  </script>
+  <script type="module" src="src/app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-row">
+      <div class="brand">
+        <span class="flame" aria-hidden="true"></span>
+        <div>
+          <h1 data-t="title"></h1>
+          <p class="tagline" data-t="tagline"></p>
+        </div>
+      </div>
+      <button id="lang" class="ghost" type="button"></button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p id="demo" class="demo" data-t="demo" hidden></p>
+
+    <section class="day">
+      <div class="day-nav">
+        <button id="prev" class="icon" type="button">‹</button>
+        <div class="day-label">
+          <p id="hebrew-date" class="hebrew-date"></p>
+          <p id="greg-date" class="greg-date"></p>
+        </div>
+        <button id="next" class="icon" type="button">›</button>
+      </div>
+      <div class="day-controls">
+        <button id="today" type="button" data-t="today"></button>
+        <input id="date-input" type="date" aria-label="date">
+        <label class="sunset"><input id="after-sunset" type="checkbox"> <span data-t="afterSunset"></span></label>
+      </div>
+    </section>
+
+    <section class="tools">
+      <input id="search" type="search" autocomplete="off">
+      <div class="filters" role="group">
+        <button type="button" data-cat="all" data-t="all"></button>
+        <button type="button" data-cat="soldier" data-t="soldier"></button>
+        <button type="button" data-cat="terror" data-t="terror"></button>
+      </div>
+    </section>
+
+    <p id="count" class="count" aria-live="polite"></p>
+    <section id="list" class="list"></section>
+  </main>
+
+  <footer class="wrap foot">
+    <p data-t="footer"></p>
+    <p><span data-t="sources"></span>:
+      <a href="https://www.izkor.gov.il" rel="noopener">izkor.gov.il</a> ·
+      <a href="https://laad.btl.gov.il" rel="noopener">laad.btl.gov.il</a></p>
+  </footer>
+</body>
+</html>
