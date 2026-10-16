@@ -97,7 +97,7 @@ function summary(p, L, inGroup) {
   const t = strings[L];
   const age = p.age != null && t.age(p.age, p.gender);
   const year = L === 'he' ? gematriya(deathHDate(p).getFullYear()) : String(parseISO(p.died).getFullYear());
-  const parts = (inGroup ? [p.hometown && t.from(pick(p.hometown, L)), age] : [pick(p.place, L), year, age]).filter(Boolean);
+  const parts = (inGroup ? [p.hometown && t.from(pick(p.hometown, L)), age] : [pick(p.placeShort || p.place, L), year, age]).filter(Boolean);
   // Isolate each part so Hebrew next to numbers keeps its order in the English UI.
   return parts.flatMap((x, i) => (i ? [' · ', el('bdi', {}, x)] : [el('bdi', {}, x)]));
 }
@@ -300,7 +300,7 @@ function groupByEvent(list) {
     if (people.length >= 3) {
       const p = people[0];
       const year = L === 'he' ? gematriya(deathHDate(p).getFullYear()) : String(parseISO(p.died).getFullYear());
-      groups.push({ title: [pick(p.place, L), year].filter(Boolean).join(' · '), people, event: true });
+      groups.push({ title: [pick(p.placeShort || p.place, L), year].filter(Boolean).join(' · '), people, event: true });
     } else {
       rest.push(...people);
     }

@@ -3,6 +3,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { HDate, gematriyaStrToNum, months } from '@hebcal/hdate';
 import { parseISO, toISO } from '../src/yahrzeit.js';
+import { shortPlace } from './place-names.mjs';
 
 const MONTHS = {
   'תשרי': months.TISHREI, 'חשון': months.CHESHVAN, 'חשוון': months.CHESHVAN, 'מרחשון': months.CHESHVAN,
@@ -46,6 +47,7 @@ export function toPerson(r) {
     died: d.greg,
     hometown: he(clean(r.lived, /^התגורר[הו]?\s*ב/)),
     place: he(clean(r.eventPlace, /^מקום אירוע:\s*/)),
+    placeShort: he(shortPlace(clean(r.eventPlace, /^מקום אירוע:\s*/))),
     burial: he(clean(r.grave.split('\n')[0], /^הובא[הו]?\s+למנוחת עולמים\s*ב/)),
     source: `https://laad.btl.gov.il/Web/He/TerrorVictims/Page/Default.aspx?ID=${r.id}`,
     photo: r.photo ? `https://laad.btl.gov.il${r.photo}` : undefined,
