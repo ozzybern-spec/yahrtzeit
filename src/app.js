@@ -6,6 +6,9 @@ import {
 } from './yahrzeit.js';
 
 const $ = (sel) => document.querySelector(sel);
+// Matches the ?v= in index.html so data and code from the same release load together.
+const VERSION = document.querySelector('meta[name=app-version]')?.content || '';
+const versioned = (path) => (VERSION ? `${path}?v=${VERSION}` : path);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 const store = {
@@ -197,7 +200,7 @@ function bioSection(cv, source) {
 /** Details and biography live in data/people/<id>.json, fetched when the sheet opens. */
 async function loadDetails(p) {
   try {
-    const r = await fetch(`data/people/${p.id}.json`);
+    const r = await fetch(versioned(`data/people/${p.id}.json`));
     return r.ok ? await r.json() : {};
   } catch { return {}; }
 }
@@ -744,7 +747,7 @@ function bind() {
 async function main() {
   bind();
   render();
-  const res = await fetch('data/index.json');
+  const res = await fetch(versioned('data/index.json'));
   const data = await res.json();
   state.people = data.people.map(expand);
   bothCategories = null;

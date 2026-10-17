@@ -6,7 +6,8 @@
     "start": "npx --yes serve@14.2.4 -l 8080 .",
     "test": "node --test test/*.test.mjs",
     "demo-data": "node scripts/make-demo-data.mjs",
-    "import": "node scripts/csv-to-json.mjs"
+    "import": "node scripts/csv-to-json.mjs",
+    "bump": "node scripts/bump-version.mjs"
   },
   "repository": {
     "type": "git",
