@@ -1,8 +1,8 @@
 // Offline support: own files network-first, CDN assets cache-first.
-const CACHE = 'yizkor-v10';
+const CACHE = 'yizkor-v11';
 const SHELL = [
   './', 'index.html',
-  'icon.svg', 'manifest.webmanifest',
+  'icon.svg', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest',
 ];
 
 self.addEventListener('install', (e) => {

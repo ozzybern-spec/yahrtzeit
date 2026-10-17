@@ -11,24 +11,25 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="יזכור">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@400;500;600;700&family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="src/styles.css?v=10">
+  <link rel="stylesheet" href="src/styles.css?v=11">
   <script type="importmap">
     {
       "imports": {
         "@hebcal/hdate": "https://cdn.jsdelivr.net/npm/@hebcal/hdate@0.22.8/+esm",
-        "./src/i18n.js": "./src/i18n.js?v=10",
-        "./src/periods.js": "./src/periods.js?v=10",
-        "./src/yahrzeit.js": "./src/yahrzeit.js?v=10"
+        "./src/i18n.js": "./src/i18n.js?v=11",
+        "./src/periods.js": "./src/periods.js?v=11",
+        "./src/yahrzeit.js": "./src/yahrzeit.js?v=11"
       }
     }
   </script>
   <!-- ?v= makes a new page load matching code and data instead of cached old files; bump with npm run bump. -->
-  <meta name="app-version" content="10">
-  <script type="module" src="src/app.js?v=10"></script>
+  <meta name="app-version" content="11">
+  <script type="module" src="src/app.js?v=11"></script>
 </head>
 <body>
   <div class="app">
@@ -71,6 +72,16 @@
           <button type="button" data-cat="terror" data-t="terrorShort"></button>
         </div>
         <div id="today-periods" class="chips" role="group" hidden></div>
+
+        <div id="install-banner" class="install-banner" hidden>
+          <img src="icon-192.png" alt="" width="40" height="40">
+          <div class="install-text">
+            <strong data-t="installTitle"></strong>
+            <span id="install-hint"></span>
+          </div>
+          <button id="install-go" class="chip-btn" type="button" data-t="installGo" hidden></button>
+          <button id="install-close" class="install-close" type="button">✕</button>
+        </div>
 
         <div id="list" class="list"></div>
       </section>

@@ -732,16 +732,41 @@ function bind() {
   dlg.addEventListener('click', (e) => { if (e.target === dlg) closeSheet(); });
   dlg.addEventListener('cancel', (e) => { e.preventDefault(); closeSheet(); });
 
-  // Install prompt (Chrome/Android).
+  // Install as app. Android/Chrome fires beforeinstallprompt; iPhone/iPad
+  // has no prompt, so explain Share → Add to Home Screen instead.
+  const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const banner = $('#install-banner');
+  const showBanner = (mode, force = false) => {
+    if (installed || (!force && store.get('installDismissed'))) return;
+    const t = strings[state.lang];
+    $('#install-hint').textContent = mode === 'ios' ? t.installHintIos : t.installHintAndroid;
+    $('#install-go').hidden = mode === 'ios';
+    $('#install-close').setAttribute('aria-label', t.installClose);
+    banner.hidden = false;
+  };
   let deferred;
-  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; $('#install').hidden = false; });
-  $('#install').addEventListener('click', async () => {
+  const promptInstall = async () => {
     if (!deferred) return;
     deferred.prompt();
     await deferred.userChoice;
     deferred = null;
+    banner.hidden = true;
     $('#install').hidden = true;
+  };
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; $('#install').hidden = false; showBanner('android'); });
+  window.addEventListener('appinstalled', () => { banner.hidden = true; $('#install').hidden = true; });
+  if (ios && !installed) { $('#install').hidden = false; showBanner('ios'); }
+  // The About row installs directly, or brings back the instructions on iPhone.
+  $('#install').addEventListener('click', () => {
+    if (deferred) { promptInstall(); return; }
+    state.view = 'today';
+    render();
+    showBanner('ios', true);
+    window.scrollTo({ top: 0 });
   });
+  $('#install-go').addEventListener('click', promptInstall);
+  $('#install-close').addEventListener('click', () => { banner.hidden = true; store.set('installDismissed', '1'); });
 }
 
 async function main() {
