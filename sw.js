@@ -1,5 +1,5 @@
 // Offline support: own files network-first, CDN assets cache-first.
-const CACHE = 'yizkor-v8';
+const CACHE = 'yizkor-v9';
 const SHELL = [
   './', 'index.html', 'src/styles.css', 'src/app.js', 'src/i18n.js', 'src/yahrzeit.js',
   'icon.svg', 'manifest.webmanifest',
@@ -21,8 +21,10 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(request.url);
 
   // Our own files and data: network-first, so updates show up right away.
+  // 'no-cache' revalidates with the server instead of using the browser's
+  // HTTP cache (GitHub Pages sends max-age=600).
   if (url.origin === location.origin) {
-    e.respondWith(fetch(request)
+    e.respondWith(fetch(request.url, { cache: 'no-cache', credentials: 'same-origin' })
       .then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(request, copy)); return res; })
       .catch(() => caches.match(request)));
     return;
