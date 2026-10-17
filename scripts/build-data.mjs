@@ -132,7 +132,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (p.unit?.he) p.unit.en ||= maps.units.get(p.unit.he);
     if (p.rank?.he) p.rank.en ||= maps.ranks.get(p.rank.he);
     if (p.burial?.he) p.burial.en ||= maps.burials.get(p.burial.he.trim());
-    if (p.survivors?.he) p.survivors.en ||= maps.survivors.get(p.survivors.he);
+    if (p.survivors?.he) {
+      // A few official lines contain a line break; translate the parts and join them.
+      p.survivors.en ||= maps.survivors.get(p.survivors.he) || p.survivors.he.split('\n')
+        .map((part, i) => { const en = maps.survivors.get(part.trim()); return en && (i ? en[0].toLowerCase() + en.slice(1) : en); })
+        .reduce((acc, x) => (acc === undefined || x === undefined ? undefined : `${acc} ${x}`.trim()), '') || undefined;
+    }
   }
 
   const peopleDir = new URL('people/', root);
@@ -153,6 +158,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   console.log(`civilians: ${laad.people.length}, security forces: ${izkor.people.length}, total: ${people.length}`);
   console.log(`needs review: ${laad.review.length + izkor.review.length}`);
-  console.log(`without English: ${missingEn.name} names, ${missingEn.place} places of attack`);
+  const noEn = (k) => people.filter((p) => p[k]?.he && !p[k].en).length;
+  console.log(`without English: ${missingEn.name} names, ${missingEn.place} places of attack, ${noEn('burial')} burial places, ${noEn('survivors')} survivor lines`);
 }
 
