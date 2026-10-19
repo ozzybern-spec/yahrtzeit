@@ -25,7 +25,7 @@ const state = {
   period: 'all',
   year: null, // search by year of death, set from the timeline
   adar: store.get('adar') === 'II' ? 'II' : 'I',
-  theme: store.get('theme') === 'light' ? 'light' : 'dark',
+  theme: store.get('theme') === 'dark' ? 'dark' : 'light',
   query: '',
   people: [],
   demo: false,
@@ -629,6 +629,7 @@ function render() {
     if (typeof v === 'string') n.textContent = v;
   }
   $('#lang').textContent = t.lang;
+  $('#brand').setAttribute('aria-label', t.appName);
   $('#lang').setAttribute('aria-label', t.langLabel);
   $('#prev').setAttribute('aria-label', t.prev);
   $('#next').setAttribute('aria-label', t.next);
