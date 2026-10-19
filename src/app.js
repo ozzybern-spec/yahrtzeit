@@ -358,123 +358,164 @@ function s(tag, attrs = {}, ...children) {
 const yearOf = (p) => Number(p.died.slice(0, 4));
 const fmtNum = (n, L) => n.toLocaleString(L === 'he' ? 'he-IL' : 'en-US');
 
-/** Columns: soldiers (bottom) and civilians (top) per year of death, for the current filters. */
+/**
+ * One dot per person, grouped by year of death, newest first: security forces,
+ * then civilians on a fresh line. Each year is its own canvas (one tall canvas
+ * would pass the browser's size limit). Tap a dot for the name, then details.
+ */
+const DOT = 2.6, DOT_GAP = 1.5, PITCH = DOT + DOT_GAP;
+let tlBlocks = [];
+
 function renderTimeline() {
   const t = strings[state.lang];
   const L = state.lang;
-  const people = state.people.filter(passesCategory);
-  renderPeriods($('#tl-periods'), people);
-  const shown = people.filter(passes);
-  $('#tl-total').textContent = t.tlTotal(fmtNum(shown.length, L));
+  const rtl = L === 'he';
+  const shown = state.people.filter(passesCategory);
+  $('#tl-total').textContent = fmtNum(shown.length, L);
+  hideDotTip();
 
   const byYear = new Map();
   for (const p of shown) {
     const y = yearOf(p);
-    if (!byYear.has(y)) byYear.set(y, { soldier: 0, terror: 0 });
-    byYear.get(y)[p.category]++;
+    if (!byYear.has(y)) byYear.set(y, { soldier: [], terror: [] });
+    byYear.get(y)[p.category].push(p);
   }
-  const allYears = state.people.map(yearOf);
-  const first = Math.max(1900, Math.min(...allYears));
-  const last = Math.max(...allYears);
-  const years = [];
-  for (let y = first; y <= last; y++) years.push(y);
-  const max = Math.max(1, ...years.map((y) => (byYear.get(y)?.soldier || 0) + (byYear.get(y)?.terror || 0)));
+  const years = [...byYear.keys()].sort((a, b) => b - a);
+  for (const v of byYear.values()) for (const k of ['soldier', 'terror']) v[k].sort((a, b) => a.died.localeCompare(b.died));
 
-  // Legend with totals (identity never by colour alone).
   const totals = { soldier: 0, terror: 0 };
-  for (const v of byYear.values()) { totals.soldier += v.soldier; totals.terror += v.terror; }
+  for (const p of shown) totals[p.category]++;
   $('#tl-legend').replaceChildren(...['soldier', 'terror'].filter((c) => totals[c]).map((c) =>
     el('span', { class: 'tl-key' }, el('span', { class: `tl-swatch ${c}` }), `${t[`${c}Short`]} · ${fmtNum(totals[c], L)}`)));
 
-  // Geometry: fixed column pitch so the chart scrolls sideways rather than squeezing.
-  const BAR = 6, GAP = 2, H = 200, TOP = 8, BOTTOM = 22;
-  const W = years.length * (BAR + GAP);
-  const yScale = (n) => (n / max) * (H - TOP - BOTTOM);
-  const nice = (() => { const step = 10 ** Math.floor(Math.log10(max)); const m = max / step; return (m <= 2 ? 0.5 : m <= 5 ? 1 : 2) * step; })();
-  const ticks = [];
-  for (let v = 0; v <= max; v += nice) ticks.push(v);
-
-  const svg = s('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': t.tlSubtitle });
-  // War periods shaded behind the columns.
+  // A war's heading sits above its most recent year that has anyone in it.
+  const anchors = new Map();
   for (const per of PERIODS) {
-    const a = Math.max(first, Number((per.from || `${first}`).slice(0, 4)));
-    const b = Math.min(last, Number((per.to || `${last}`).slice(0, 4)));
-    if (b < first || a > last) continue;
-    const active = state.period === per.key;
-    svg.append(s('rect', { x: (a - first) * (BAR + GAP) - 1, y: TOP, width: (b - a + 1) * (BAR + GAP), height: H - TOP - BOTTOM,
-      class: `tl-war${active ? ' active' : ''}` }));
+    const from = Number((per.from || '1900').slice(0, 4));
+    const to = per.to ? Number(per.to.slice(0, 4)) : Infinity;
+    const y = years.find((x) => x >= from && x <= to && !anchors.has(x));
+    if (y != null) anchors.set(y, per);
   }
-  for (const v of ticks) {
-    const y = H - BOTTOM - yScale(v);
-    svg.append(s('line', { x1: 0, x2: W, y1: y, y2: y, class: 'tl-grid' }));
+  const counts = new Map();
+  for (const p of shown) counts.set(p.period, (counts.get(p.period) || 0) + 1);
+  $('#tl-periods').replaceChildren(...[...anchors.values()].reverse().map((per) => el('button', {
+    class: 'chip', type: 'button',
+    onclick: () => document.getElementById(`tl-war-${per.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+  }, per[L], el('span', { class: 'chip-count' }, fmtNum(counts.get(per.key) || 0, L)))));
+
+  const box = $('#tl-chart');
+  const width = Math.max(240, box.clientWidth || 350);
+  const label = 52;
+  const per = Math.floor((width - label) / PITCH);
+  tlBlocks = [];
+  const nodes = [];
+  for (const y of years) {
+    const v = byYear.get(y);
+    const war = anchors.get(y);
+    if (war) nodes.push(el('h3', { class: 'tl-war-h', id: `tl-war-${war.key}` }, war[L]));
+    const ls = Math.ceil(v.soldier.length / per);
+    const lines = ls + Math.ceil(v.terror.length / per);
+    const n = v.soldier.length + v.terror.length;
+    const canvas = el('canvas', { class: 'tl-dots', 'aria-label': `${y}: ${fmtNum(n, L)}` });
+    const block = { y, v, ls, per, canvas, w: width - label, h: Math.max(lines * PITCH, 6), rtl, sel: null };
+    canvas.addEventListener('click', (e) => tapDot(block, e));
+    tlBlocks.push(block);
+    nodes.push(el('div', { class: `tl-year${n >= 500 ? ' big' : ''}` },
+      el('span', { class: 'tl-y' }, String(y), n >= 500 ? el('small', {}, fmtNum(n, L)) : null),
+      canvas));
   }
-  // Rounded data-end, square at the baseline; 2px surface gap between stacked segments.
-  const column = (x, y0, h, cls, roundTop) => {
-    if (h <= 0) return null;
-    const r = roundTop ? Math.min(3, h, BAR / 2) : 0;
-    const yTop = y0 - h;
-    return s('path', { class: cls, d: `M${x},${y0} V${yTop + r} Q${x},${yTop} ${x + r},${yTop} H${x + BAR - r} Q${x + BAR},${yTop} ${x + BAR},${yTop + r} V${y0} Z` });
+  box.replaceChildren(...nodes);
+  for (const b of tlBlocks) drawDots(b);
+}
+
+function dotSprites() {
+  const cs = getComputedStyle(document.documentElement);
+  const dark = document.documentElement.dataset.theme === 'dark';
+  const dpr = window.devicePixelRatio || 1;
+  const make = (color) => {
+    const R = 4 * DOT, c = document.createElement('canvas');
+    c.width = c.height = Math.ceil(R * 2 * dpr);
+    const g = c.getContext('2d');
+    g.scale(dpr, dpr);
+    if (dark) { g.shadowColor = color; g.shadowBlur = 4; }
+    g.fillStyle = color;
+    g.beginPath(); g.arc(R, R, DOT / 2, 0, Math.PI * 2); g.fill();
+    return c;
   };
-  years.forEach((y, i) => {
-    const v = byYear.get(y) || { soldier: 0, terror: 0 };
-    const x = i * (BAR + GAP);
-    const base = H - BOTTOM;
-    // At least 2px so a year with a handful of names is still visible next to 1948.
-    const hs = v.soldier ? Math.max(2, yScale(v.soldier)) : 0;
-    const ht = v.terror ? Math.max(2, yScale(v.terror)) : 0;
-    const gap = hs && ht ? 2 : 0;
-    svg.append(column(x, base, hs, 'tl-bar soldier', !ht) || '');
-    svg.append(column(x, base - hs - gap, ht, 'tl-bar terror', true) || '');
-    if (y % 10 === 0) svg.append(s('text', { x: x + BAR / 2, y: H - 6, class: 'tl-label', 'text-anchor': 'middle' }, document.createTextNode(String(y))));
-    if (y === state.year) svg.append(s('rect', { x: x - 1, y: TOP, width: BAR + 2, height: H - TOP - BOTTOM, class: 'tl-sel' }));
-  });
-  // Wide invisible hit targets, one per year.
-  years.forEach((y, i) => {
-    const hit = s('rect', { x: i * (BAR + GAP) - 1, y: 0, width: BAR + GAP + 2, height: H, class: 'tl-hit' });
-    hit.addEventListener('pointerenter', () => showTip(y, byYear.get(y), i * (BAR + GAP)));
-    hit.addEventListener('click', () => showTip(y, byYear.get(y), i * (BAR + GAP), true));
-    svg.append(hit);
-  });
-  $('#tl-chart').replaceChildren(svg);
-  $('#tl-axis').replaceChildren(...ticks.map((v) => el('span', { style: `bottom:${BOTTOM + yScale(v) - 7}px` }, v >= 1000 ? `${v / 1000}K` : String(v))));
-  $('#tl-axis').style.height = `${H}px`;
+  return { soldier: make(cs.getPropertyValue('--soldier').trim()), terror: make(cs.getPropertyValue('--terror').trim()), ink: cs.getPropertyValue('--ink').trim() };
+}
 
-  // Start at the most recent years; when a war is chosen, bring it into view.
-  const sc = $('#tl-scroll');
-  const per = PERIODS.find((x) => x.key === state.period);
-  if (per) {
-    const mid = (Number((per.from || `${first}`).slice(0, 4)) + Number((per.to || `${last}`).slice(0, 4))) / 2;
-    requestAnimationFrame(() => { sc.scrollLeft = (mid - first) * (BAR + GAP) - sc.clientWidth / 2; });
-  } else if (sc.dataset.scrolled !== state.period) {
-    requestAnimationFrame(() => { sc.scrollLeft = sc.scrollWidth; });
-  }
-  sc.dataset.scrolled = state.period;
+// Position of the i-th dot of a category within a year's block.
+function dotXY(b, cat, i) {
+  const line = (cat === 'soldier' ? 0 : b.ls) + Math.floor(i / b.per);
+  const col = i % b.per;
+  const x = col * PITCH + DOT / 2 + 1;
+  return { x: b.rtl ? b.w - x : x, y: line * PITCH + DOT / 2 + 1 };
+}
 
-  // Table view.
-  const tableOpen = !$('#tl-table').hidden;
-  $('#tl-table-btn').textContent = tableOpen ? t.hideTable : t.showTable;
-  if (tableOpen) {
-    const rows = years.filter((y) => byYear.get(y)).reverse().map((y) => {
-      const v = byYear.get(y);
-      return el('tr', {}, el('td', {}, String(y)), el('td', {}, fmtNum(v.soldier, L)), el('td', {}, fmtNum(v.terror, L)), el('td', {}, fmtNum(v.soldier + v.terror, L)));
+let sprites = null;
+function drawDots(b) {
+  sprites = sprites && sprites.theme === document.documentElement.dataset.theme ? sprites : { ...dotSprites(), theme: document.documentElement.dataset.theme };
+  const dpr = window.devicePixelRatio || 1;
+  const { canvas } = b;
+  canvas.width = Math.ceil(b.w * dpr);
+  canvas.height = Math.ceil((b.h + 2) * dpr);
+  canvas.style.width = `${b.w}px`;
+  canvas.style.height = `${b.h + 2}px`;
+  const g = canvas.getContext('2d');
+  g.scale(dpr, dpr);
+  const R = 4 * DOT;
+  for (const cat of ['soldier', 'terror']) {
+    b.v[cat].forEach((p, i) => {
+      const { x, y } = dotXY(b, cat, i);
+      g.drawImage(sprites[cat], x - R, y - R, R * 2, R * 2);
     });
-    $('#tl-table').replaceChildren(el('table', {},
-      el('thead', {}, el('tr', {}, el('th', {}, t.year), el('th', {}, t.soldierShort), el('th', {}, t.terrorShort), el('th', {}, t.total))),
-      el('tbody', {}, ...rows)));
   }
+  if (b.sel) {
+    const { x, y } = dotXY(b, b.sel.cat, b.sel.i);
+    g.strokeStyle = sprites.ink; g.lineWidth = 1.2;
+    g.beginPath(); g.arc(x, y, DOT + 1.2, 0, Math.PI * 2); g.stroke();
+  }
+}
 
-  function showTip(y, v = { soldier: 0, terror: 0 }, x, pinned) {
-    const tip = $('#tl-tip');
-    const total = v.soldier + v.terror;
-    tip.replaceChildren(
-      el('strong', {}, t.tlYear(y)),
-      el('span', {}, `${t.total}: ${fmtNum(total, L)}`),
-      v.soldier ? el('span', {}, el('span', { class: 'tl-swatch soldier' }), `${t.soldierShort}: ${fmtNum(v.soldier, L)}`) : null,
-      v.terror ? el('span', {}, el('span', { class: 'tl-swatch terror' }), `${t.terrorShort}: ${fmtNum(v.terror, L)}`) : null,
-      total && pinned ? el('button', { class: 'chip-btn', type: 'button', onclick: () => { state.year = y; state.query = ''; $('#search').value = ''; state.view = 'search'; render(); window.scrollTo({ top: 0 }); } }, t.showNames) : null,
-    );
-    tip.hidden = false;
-  }
+function tapDot(b, e) {
+  const r = b.canvas.getBoundingClientRect();
+  const px = b.rtl ? r.right - e.clientX : e.clientX - r.left;
+  const col = Math.max(0, Math.min(b.per - 1, Math.floor(px / PITCH)));
+  const line = Math.max(0, Math.floor((e.clientY - r.top) / PITCH));
+  const cat = line < b.ls ? 'soldier' : 'terror';
+  const i = (line - (cat === 'soldier' ? 0 : b.ls)) * b.per + col;
+  const p = b.v[cat][i];
+  for (const o of tlBlocks) if (o.sel && o !== b) { o.sel = null; drawDots(o); }
+  if (!p) { b.sel = null; drawDots(b); hideDotTip(); return; }
+  b.sel = { cat, i };
+  drawDots(b);
+  showDotTip(p, e.clientX, e.clientY);
+}
+
+function showDotTip(p, cx, cy) {
+  const t = strings[state.lang];
+  const L = state.lang;
+  const tip = $('#tl-tip');
+  tip.replaceChildren(
+    avatar(p),
+    el('span', { class: 'tl-tip-main' },
+      el('strong', { dir: 'auto' }, pick(p.name, L)),
+      el('span', { dir: L === 'he' ? 'rtl' : 'ltr' }, `${fmtHebrew(deathHDate(p), L)} · ${t[`${p.category}Short`]}`)),
+    el('button', { class: 'chip-btn', type: 'button', onclick: () => { hideDotTip(); openSheet(p); } }, t.details),
+  );
+  tip.hidden = false;
+  // Above the dot when there is room, else below; kept on screen.
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  const left = Math.min(window.innerWidth - w - 12, Math.max(12, cx - w / 2));
+  const top = cy - h - 14 > 70 ? cy - h - 14 : cy + 16;
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
+}
+
+function hideDotTip() {
+  const tip = $('#tl-tip');
+  if (tip) tip.hidden = true;
 }
 
 /* ---------- Views ---------- */
@@ -684,7 +725,9 @@ function bind() {
     b.addEventListener('click', () => { state.category = b.dataset.cat; render(); });
   }
   $('#search-year').addEventListener('click', () => { state.year = null; renderSearch(); });
-  $('#tl-table-btn').addEventListener('click', () => { $('#tl-table').hidden = !$('#tl-table').hidden; renderTimeline(); });
+  // Close the dot popup on scroll or a tap elsewhere.
+  window.addEventListener('scroll', hideDotTip, { passive: true });
+  document.addEventListener('click', (e) => { if (!e.target.closest('#tl-tip, .tl-dots')) hideDotTip(); });
   $('#theme').addEventListener('click', () => { state.theme = state.theme === 'dark' ? 'light' : 'dark'; store.set('theme', state.theme); render(); });
   for (const b of $$('[data-theme-opt] button')) {
     b.addEventListener('click', () => { state.theme = b.dataset.themeVal; store.set('theme', state.theme); render(); });

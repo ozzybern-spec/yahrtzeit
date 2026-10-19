@@ -16,20 +16,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Noto+Serif+Hebrew:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="src/styles.css?v=16">
+  <link rel="stylesheet" href="src/styles.css?v=17">
   <script type="importmap">
     {
       "imports": {
         "@hebcal/hdate": "https://cdn.jsdelivr.net/npm/@hebcal/hdate@0.22.8/+esm",
-        "./src/i18n.js": "./src/i18n.js?v=16",
-        "./src/periods.js": "./src/periods.js?v=16",
-        "./src/yahrzeit.js": "./src/yahrzeit.js?v=16"
+        "./src/i18n.js": "./src/i18n.js?v=17",
+        "./src/periods.js": "./src/periods.js?v=17",
+        "./src/yahrzeit.js": "./src/yahrzeit.js?v=17"
       }
     }
   </script>
   <!-- ?v= makes a new page load matching code and data instead of cached old files; bump with npm run bump. -->
-  <meta name="app-version" content="16">
-  <script type="module" src="src/app.js?v=16"></script>
+  <meta name="app-version" content="17">
+  <script type="module" src="src/app.js?v=17"></script>
 </head>
 <body>
   <div class="app">
@@ -107,24 +107,17 @@
       <section id="view-timeline" class="view" hidden>
         <div class="tl-hero">
           <p id="tl-total" class="tl-total"></p>
-          <p class="muted" data-t="tlSubtitle"></p>
+          <p class="tl-sub" data-t="tlSubtitle"></p>
         </div>
         <div class="segmented" data-filters role="group">
           <button type="button" data-cat="all" data-t="all"></button>
           <button type="button" data-cat="soldier" data-t="soldierShort"></button>
           <button type="button" data-cat="terror" data-t="terrorShort"></button>
         </div>
-        <div id="tl-periods" class="chips" role="group"></div>
-        <div class="tl-card">
-          <div id="tl-legend" class="tl-legend"></div>
-          <div class="tl-chart-wrap">
-            <div id="tl-axis" class="tl-axis" aria-hidden="true"></div>
-            <div id="tl-scroll" class="tl-scroll"><div id="tl-chart" dir="ltr"></div></div>
-          </div>
-          <div id="tl-tip" class="tl-tip" hidden></div>
-          <button id="tl-table-btn" class="bio-more" type="button" data-t="showTable"></button>
-          <div id="tl-table" class="tl-table" hidden></div>
-        </div>
+        <div id="tl-periods" class="chips tl-jump" role="group"></div>
+        <div id="tl-legend" class="tl-legend"></div>
+        <div id="tl-chart" class="tl-chart"></div>
+        <div id="tl-tip" class="tl-tip" hidden></div>
       </section>
 
       <!-- About -->
