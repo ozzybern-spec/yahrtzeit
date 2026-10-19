@@ -340,7 +340,7 @@ function renderCalendar() {
     },
     el('span', { class: 'cal-heb' }, L === 'he' ? gematriya(d) : String(d)),
     el('span', { class: 'cal-gd' }, String(hd.greg().getDate())),
-    el('span', { class: 'cal-count' }, count ? String(count) : '')));
+    el('span', { class: 'cal-count' }, count ? fmtNum(count, L) : '')));
   }
   $('#cal-grid').replaceChildren(...week, ...cells);
   $('#cal-date').value = toISO(state.date);
@@ -499,7 +499,7 @@ function renderStrip() {
     el('span', { class: 'day-wd' }, fmtGreg(d, L, { weekday: 'short' })),
     el('span', { class: 'day-heb' }, L === 'he' ? gematriya(hd.getDate()) : String(hd.getDate())),
     el('span', { class: 'day-greg' }, fmtGreg(d, L, { day: 'numeric', month: 'short' })),
-    el('span', { class: 'day-count' }, count ? String(count) : ''),
+    el('span', { class: 'day-count' }, count ? fmtNum(count, L) : ''),
     ));
   }
   strip.replaceChildren(...days);
@@ -529,7 +529,7 @@ function renderToday() {
   out.replaceChildren(...(list.length
     ? groupByEvent(list).flatMap((g) => [
       g.title && el('h3', { class: 'group-title', dir: 'auto' },
-        el('span', {}, g.title), el('span', { class: 'group-count' }, String(g.people.length))),
+        el('span', {}, g.title), el('span', { class: 'group-count' }, fmtNum(g.people.length, L))),
       ...g.people.map((p) => card(p, { inGroup: g.event })),
     ]).filter(Boolean)
     : [el('div', { class: 'empty' }, el('span', { class: 'candle big dim' }, el('span', { class: 'flame' })), t.none)]));
