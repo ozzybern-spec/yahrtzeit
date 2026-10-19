@@ -399,6 +399,42 @@ function openCalendar() {
   requestAnimationFrame(() => dlg.classList.add('open'));
 }
 
+/**
+ * Pull a bottom sheet down to close it: by the handle, or anywhere when the
+ * sheet is scrolled to the top. A short pull springs back.
+ */
+function dragToClose(dlg, close) {
+  let y0 = null;
+  let dy = 0;
+  let t0 = 0;
+  const reset = () => { dlg.style.transition = ''; dlg.style.transform = ''; y0 = null; dy = 0; };
+  dlg.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    const onHandle = e.target.closest('.sheet-handle');
+    if (!onHandle && dlg.scrollTop > 0) return;
+    y0 = e.touches[0].clientY;
+    t0 = performance.now();
+    dy = 0;
+  }, { passive: true });
+  dlg.addEventListener('touchmove', (e) => {
+    if (y0 == null) return;
+    dy = e.touches[0].clientY - y0;
+    if (dy <= 0) { if (dlg.style.transform) { dlg.style.transform = ''; } y0 = dlg.scrollTop > 0 ? null : y0; return; }
+    e.preventDefault(); // the sheet moves instead of scrolling
+    dlg.style.transition = 'none';
+    dlg.style.transform = `translateY(${dy}px)`;
+  }, { passive: false });
+  const end = () => {
+    if (y0 == null) return;
+    const fast = dy / Math.max(1, performance.now() - t0) > 0.6;
+    const shut = dy > 110 || (fast && dy > 30);
+    reset();
+    if (shut) close();
+  };
+  dlg.addEventListener('touchend', end);
+  dlg.addEventListener('touchcancel', end);
+}
+
 function closeCalendar() {
   const dlg = $('#calendar');
   dlg.classList.remove('open');
@@ -873,6 +909,7 @@ function bind() {
   const cal = $('#calendar');
   cal.addEventListener('click', (e) => { if (e.target === cal) closeCalendar(); });
   cal.addEventListener('cancel', (e) => { e.preventDefault(); closeCalendar(); });
+  dragToClose(cal, closeCalendar);
   $('#date-input').addEventListener('change', (e) => { if (e.target.value) { state.date = parseISO(e.target.value); render(); } });
   $('#copy-all').addEventListener('click', copyAllNames);
   $('#share-day').addEventListener('click', (e) => shareDayCard(e.currentTarget));
@@ -931,6 +968,7 @@ function bind() {
   const dlg = $('#sheet');
   dlg.addEventListener('click', (e) => { if (e.target === dlg) closeSheet(); });
   dlg.addEventListener('cancel', (e) => { e.preventDefault(); closeSheet(); });
+  dragToClose(dlg, closeSheet);
 
   // Install as app. Android/Chrome fires beforeinstallprompt; iPhone/iPad
   // has no prompt, so explain Share → Add to Home Screen instead.
