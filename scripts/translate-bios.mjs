@@ -55,6 +55,8 @@ function knownNames(id, index, d) {
   const lines = [];
   if (p.n) lines.push(p.e ? `Name: ${p.e} (Hebrew: ${p.n})` : `Name (transliterate): ${p.n}`);
   if (d.parents && d.parentsEn) lines.push(`Parents: ${d.parentsEn} (Hebrew: ${d.parents})`);
+  if (p.p) lines.push(`Father's name (Hebrew): ${p.p}`);
+  if (p.n) lines.push(`Gender: ${p.g === 'f' ? 'female' : 'male'}`);
   if (p.e) lines.push(`Start with: ${p.e}`);
   return lines;
 }
@@ -79,7 +81,8 @@ function loadWork() {
 function params({ cv, names }, think = false) {
   return {
     model: MODEL,
-    max_tokens: 16000,
+    // Thinking at high effort can run past 16,000 tokens on a long biography.
+    max_tokens: think ? 32000 : 16000,
     // Plain translation needs no extended reasoning, which keeps cost down; redo turns it on so
     // doubts about names get settled before writing instead of in the text.
     thinking: think ? { type: 'adaptive' } : { type: 'disabled' },
@@ -156,11 +159,19 @@ if (cmd === 'sample') {
   const kept = readFileSync(outFile, 'utf8').split('\n').filter(Boolean).filter((l) => !ids.has(JSON.parse(l).id));
   writeFileSync(outFile, kept.join('\n') + '\n');
   const { work } = loadWork();
+  const todo = work.filter((x) => ids.has(x.id));
   let ok = 0;
-  for (const w of work.filter((x) => ids.has(x.id))) {
+  const usage = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
+  // A few at a time: each takes 10–30 seconds with thinking.
+  const one = async (w) => {
     try {
-      const msg = await client.messages.create(params(w, true));
-      if (msg.stop_reason !== 'end_turn') { console.log(`\n${w.id}: ${msg.stop_reason}`); continue; }
+      // Streamed: the SDK refuses non-streaming requests this large (max_tokens 32,000).
+      const msg = await client.messages.stream(params(w, true)).finalMessage();
+      usage.input += msg.usage.input_tokens;
+      usage.cacheWrite += msg.usage.cache_creation_input_tokens || 0;
+      usage.cacheRead += msg.usage.cache_read_input_tokens || 0;
+      usage.output += msg.usage.output_tokens;
+      if (msg.stop_reason !== 'end_turn') { console.log(`\n${w.id}: ${msg.stop_reason}`); return; }
       const en = textOf(msg);
       appendFileSync(outFile, JSON.stringify({ id: w.id, en }) + '\n');
       const file = new URL(`people/${w.id}.json`, root);
@@ -168,7 +179,11 @@ if (cmd === 'sample') {
       ok++;
       process.stdout.write('.');
     } catch (e) { console.log(`\n${w.id}: ${e.message}`); }
-  }
+  };
+  for (let i = 0; i < todo.length; i += 8) await Promise.all(todo.slice(i, i + 8).map(one));
+  // Full price (no batch discount): $0.10 / $0.50 per million, cache writes 1.25×, reads 0.1×.
+  const cost = (usage.input * 0.10 + usage.cacheWrite * 0.125 + usage.cacheRead * 0.01 + usage.output * 0.50) / 1e6;
+  console.log(`\ntokens: ${JSON.stringify(usage)}; cost $${cost.toFixed(2)}`);
   console.log(`\nredid ${ok} of ${ids.size}`);
 } else if (cmd === 'status') {
   for (const { id } of recordedBatches()) {
