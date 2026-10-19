@@ -5,6 +5,7 @@
 //   node scripts/translate-bios.mjs sample [n]   translate n biographies now (default 20) → data/raw/bio-sample.md
 //   node scripts/translate-bios.mjs submit       every biography not yet in data/en/bios.jsonl, in batches of BATCH_SIZE
 //   node scripts/translate-bios.mjs status       progress of the submitted batch
+//   node scripts/translate-bios.mjs redo ids.json  translate those ids again now, with thinking (fixes ones that went wrong)
 //   node scripts/translate-bios.mjs collect      save finished translations to data/en/bios.jsonl and data/people/<id>.json
 //
 // data/en/bios.jsonl ({id, en}) is the source of truth (build-data.mjs merges it on a full
@@ -35,7 +36,7 @@ Rules:
 - Keep Hebrew terms with no good English equivalent transliterated, with a short gloss the first time (e.g. Palmach, the pre-state strike force).
 - Names of movements, organizations, units and institutions are proper names: transliterate them, never translate them word by word. Use the spellings in the organization list below; gloss the first mention briefly if the reader needs it. E.g. "הבונים" → Habonim (not "the Builders"); "בית החלוץ" → Beit HeHalutz (not "Halutz House").
 - The translation's first words are always the person's English name, given in the request as "Start with", built into a natural first sentence, e.g. "Lotan Itzhaki, son of Hana and Yosef, was born …" (Hebrew often opens with no subject: "בנם של חנה ויוסף, נולד…"). Never begin with "Son of" or "Daughter of", never split the parents off into a sentence of their own, and never leave a sentence without a subject; later, use "he"/"she" or the first name.
-- Never add notes, comments, corrections, questions or remarks of your own, about the text, the names or these instructions, in any form (no "Note:", no bracketed notes, no "Wait", "Hmm" or "Actually"). Never repeat the request's fields. Where something is unclear, take the most likely reading and continue silently.
+- Never add notes, comments, corrections, questions or remarks of your own, about the text, the names or these instructions, in any form (no "Note:", no bracketed notes, no "Wait", "Hmm" or "Actually"). Never repeat the request's fields. Where something is unclear, take the most likely reading and continue silently. An unfamiliar place or name is transliterated once as written, with no guesses, question marks or alternatives ("… no, in …"), and never corrected mid-text.
 - Ranks: use the English rank from the rank list below, with no Hebrew in parentheses. Ranks of foreign armies (e.g. the British Army in World War II) are already English: write Corporal, Sergeant, etc.
 
 IDF ranks (Hebrew → English):
@@ -75,13 +76,14 @@ function loadWork() {
   return { work, done };
 }
 
-function params({ cv, names }) {
+function params({ cv, names }, think = false) {
   return {
     model: MODEL,
     max_tokens: 16000,
-    // Plain translation: no extended reasoning needed, which also keeps cost down.
-    thinking: { type: 'disabled' },
-    output_config: { effort: 'low' },
+    // Plain translation needs no extended reasoning, which keeps cost down; redo turns it on so
+    // doubts about names get settled before writing instead of in the text.
+    thinking: think ? { type: 'adaptive' } : { type: 'disabled' },
+    output_config: { effort: think ? 'high' : 'low' },
     // Same system prompt for every request: cache it so most of its tokens bill at the cache-read rate.
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{
@@ -148,6 +150,26 @@ if (cmd === 'sample') {
     writeFileSync(batchFile, JSON.stringify({ batches, created: new Date().toISOString() }));
     console.log(`submitted ${chunk.length} biographies as batch ${batch.id}`);
   }
+} else if (cmd === 'redo') {
+  // Translate again now, with thinking: ids from a JSON array file; replaces their saved translation.
+  const ids = new Set(JSON.parse(readFileSync(arg, 'utf8')));
+  const kept = readFileSync(outFile, 'utf8').split('\n').filter(Boolean).filter((l) => !ids.has(JSON.parse(l).id));
+  writeFileSync(outFile, kept.join('\n') + '\n');
+  const { work } = loadWork();
+  let ok = 0;
+  for (const w of work.filter((x) => ids.has(x.id))) {
+    try {
+      const msg = await client.messages.create(params(w, true));
+      if (msg.stop_reason !== 'end_turn') { console.log(`\n${w.id}: ${msg.stop_reason}`); continue; }
+      const en = textOf(msg);
+      appendFileSync(outFile, JSON.stringify({ id: w.id, en }) + '\n');
+      const file = new URL(`people/${w.id}.json`, root);
+      writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), cvEn: en }));
+      ok++;
+      process.stdout.write('.');
+    } catch (e) { console.log(`\n${w.id}: ${e.message}`); }
+  }
+  console.log(`\nredid ${ok} of ${ids.size}`);
 } else if (cmd === 'status') {
   for (const { id } of recordedBatches()) {
     const b = await client.messages.batches.retrieve(id);
