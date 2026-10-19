@@ -30,11 +30,12 @@ Rules:
 - Translate the whole text faithfully and completely. Do not summarize, add, or comment.
 - Keep the paragraph breaks (blank lines) as in the original.
 - Tone: respectful, plain, factual English. Keep the family's warmth where it is in the original.
-- Names: use the English spellings given in the "Known names" section for the person and their family. Transliterate other names the way Israeli official English records do (e.g. Yosef, Moshe, Cohen, Tzvi). Nicknames that are English or European names take their usual spelling (דבי → Debbie, ג'ק → Jack).
+- Names: use the English spellings given in the request ("Name", "Parents") for the person and their family. Transliterate other names the way Israeli official English records do (e.g. Yosef, Moshe, Cohen, Tzvi). Nicknames that are English or European names take their usual spelling (דבי → Debbie, ג'ק → Jack).
 - Hebrew dates: write them as day, month, year, e.g. ד' בניסן תש"ד → 4 Nisan 5704. Keep any Gregorian date that follows, written as e.g. 28 March 1944.
 - Keep Hebrew terms with no good English equivalent transliterated, with a short gloss the first time (e.g. Palmach, the pre-state strike force).
 - Names of movements, organizations, units and institutions are proper names: transliterate them, never translate them word by word. Use the spellings in the organization list below; gloss the first mention briefly if the reader needs it. E.g. "הבונים" → Habonim (not "the Builders"); "בית החלוץ" → Beit HeHalutz (not "Halutz House").
-- Hebrew often opens with no subject ("בנם של חנה ויוסף, נולד…"). English needs one. Write the first sentence as "<English name>, son of <parents>, was born …" (or "daughter of"), with the name from "Known names". Never begin with "Son of" or "Daughter of", and never leave a sentence without a subject; later, use "he"/"she" or the first name.
+- The translation's first words are always the person's English name, given in the request as "Start with", built into a natural first sentence, e.g. "Lotan Itzhaki, son of Hana and Yosef, was born …" (Hebrew often opens with no subject: "בנם של חנה ויוסף, נולד…"). Never begin with "Son of" or "Daughter of", never split the parents off into a sentence of their own, and never leave a sentence without a subject; later, use "he"/"she" or the first name.
+- Never add notes, comments, corrections, questions or remarks of your own, about the text, the names or these instructions, in any form (no "Note:", no bracketed notes, no "Wait", "Hmm" or "Actually"). Never repeat the request's fields. Where something is unclear, take the most likely reading and continue silently.
 - Ranks: use the English rank from the rank list below, with no Hebrew in parentheses. Ranks of foreign armies (e.g. the British Army in World War II) are already English: write Corporal, Sergeant, etc.
 
 IDF ranks (Hebrew → English):
@@ -47,10 +48,13 @@ Organizations (Hebrew → English):
 ההגנה → the Haganah; הפלמ"ח → the Palmach; אצ"ל / האירגון הצבאי הלאומי → the Irgun; לח"י → Lehi; חי"ש → the Hish (Haganah field corps); חי"ם → the Him (Haganah garrison corps); גדנ"ע → Gadna; נח"ל → Nahal; הנוטרים / נוטר → the Notrim (Jewish Supernumerary Police) / a Notar; הבריגדה היהודית → the Jewish Brigade; ההסתדרות → the Histadrut; הסוכנות היהודית → the Jewish Agency; קרן היסוד → Keren Hayesod; הקרן הקיימת → the Jewish National Fund; העלייה השנייה → the Second Aliyah; עלייה ב' → Aliyah Bet; החלוץ → HeHalutz; הבונים → Habonim; השומר הצעיר → Hashomer Hatzair; בני עקיבא → Bnei Akiva; בית"ר → Betar; הנוער העובד → HaNoar HaOved; מחנות העולים → Machanot HaOlim; תנועת המושבים → the Moshav Movement; הקיבוץ המאוחד → HaKibbutz HaMeuhad; קיבוץ → kibbutz; מושב → moshav; מושב עובדים → moshav ovdim; ישיבה → yeshiva; צה"ל → the IDF; שב"כ → the Shin Bet; המוסד → the Mossad; משמר הגבול → the Border Police; חיל האוויר → the Air Force; חיל הים → the Navy; חיל השריון → the Armored Corps; חיל התותחנים → the Artillery Corps; חיל ההנדסה → the Combat Engineering Corps; חטיבת גולני → the Golani Brigade; חטיבת הצנחנים → the Paratroopers Brigade; חטיבת גבעתי → the Givati Brigade; סיירת מטכ"ל → Sayeret Matkal; מלחמת העצמאות → the War of Independence; מלחמת ששת הימים → the Six-Day War; מלחמת ההתשה → the War of Attrition; מלחמת יום הכיפורים → the Yom Kippur War; מלחמת לבנון → the Lebanon War; האינתיפאדה → the Intifada.
 - Output only the English translation.`;
 
-function knownNames(id, index) {
+/** The request's fields: the person's name and parents, English with the Hebrew they render. */
+function knownNames(id, index, d) {
   const p = index.get(id) || {};
   const lines = [];
-  if (p.n) lines.push(`${p.n} = ${p.e || '(transliterate)'}`);
+  if (p.n) lines.push(p.e ? `Name: ${p.e} (Hebrew: ${p.n})` : `Name (transliterate): ${p.n}`);
+  if (d.parents && d.parentsEn) lines.push(`Parents: ${d.parentsEn} (Hebrew: ${d.parents})`);
+  if (p.e) lines.push(`Start with: ${p.e}`);
   return lines;
 }
 
@@ -65,8 +69,7 @@ function loadWork() {
     if (done.has(id)) continue;
     const d = JSON.parse(readFileSync(new URL(`people/${file}`, root), 'utf8'));
     if (!d.cv) continue;
-    const names = knownNames(id, index);
-    if (d.parents && d.parentsEn) names.push(`${d.parents} = ${d.parentsEn}`);
+    const names = knownNames(id, index, d);
     work.push({ id, cv: d.cv, names });
   }
   return { work, done };
@@ -83,7 +86,7 @@ function params({ cv, names }) {
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{
       role: 'user',
-      content: `Known names:\n${names.join('\n') || '(none)'}\n\nBiography:\n${cv}`,
+      content: `${names.join('\n')}\n\nBiography:\n${cv}`,
     }],
   };
 }
