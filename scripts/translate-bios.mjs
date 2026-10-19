@@ -76,7 +76,9 @@ if (!apiKey) {
   console.error('Set YIZKOR_API_KEY (or ANTHROPIC_API_KEY) to an API key from console.anthropic.com.');
   process.exit(1);
 }
-const client = new Anthropic({ apiKey });
+// Always the public API: cloud sessions set ANTHROPIC_BASE_URL for Claude Code's own traffic,
+// which the SDK would otherwise follow (sending this key to the session's endpoint).
+const client = new Anthropic({ apiKey, baseURL: 'https://api.anthropic.com' });
 const [cmd = 'sample', arg] = process.argv.slice(2);
 
 if (cmd === 'sample') {
