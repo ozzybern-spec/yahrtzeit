@@ -9,7 +9,7 @@ A daily yahrzeit list for Israel's fallen soldiers and security personnel and fo
 - **Details panel:** tap a name to see all of the person's details, copy "Ploni ben/bat Ploni" for prayer, share, or open the official record.
 - **Search** by name, father's name or town, with each result's next yahrzeit.
 - **Filters:** civilians or security forces, and by war (official war dates; see `src/periods.js`). Neither official list records how a soldier died, so there is no battle/terror/accident filter.
-- **Hebrew and English**, with right-to-left layout in Hebrew. English names come from izkor.gov.il; the rest (all civilians, about 1,200 soldiers) are transliterated via `data/en/names.json` and places via `data/en/places.json` (see `scripts/english.mjs`). Biographies exist in Hebrew only; in English mode they link to the official page through Google Translate.
+- **Hebrew and English**, with right-to-left layout in Hebrew. English names come from izkor.gov.il; the rest (all civilians, about 1,200 soldiers) are transliterated via `data/en/names.json` and places via `data/en/places.json` (see `scripts/english.mjs`). Biographies are published in Hebrew only; English mode shows a one-time machine translation when one exists (see below), otherwise the Hebrew.
 - **Calendar:** tap the date for a Hebrew month view with the number remembered each day.
 - **Timeline tab:** people remembered by year of death, civilians stacked on security forces, war periods shaded; tap a year to list its names.
 - **Installable app:** it can be added to a phone's home screen and works offline.
@@ -48,6 +48,17 @@ node scripts/build-data.mjs
 Before relying on the data, confirm with the Ministry of Defense and the National Insurance Institute that their terms allow this use.
 
 The demo generator (`npm run demo-data`) and CSV importer (`npm run import`) still write the old single-file `data/fallen.json` format.
+
+### English biographies (one-time translation)
+`scripts/translate-bios.mjs` translates every biography with Claude Haiku 5.5 through the Message Batches API (half price; estimated about $6 for all 28,636). It needs an `ANTHROPIC_API_KEY` from console.anthropic.com in the environment (the Claude Max plan does not cover API use).
+```bash
+node scripts/translate-bios.mjs sample 20   # 20 biographies → data/raw/bio-sample.md, with a cost estimate for the rest
+node scripts/translate-bios.mjs submit      # one batch with everything not yet translated
+node scripts/translate-bios.mjs status      # usually done within an hour (at most 24)
+node scripts/translate-bios.mjs collect     # writes data/en/bios.jsonl and cvEn into data/people/<id>.json
+npm run bump && git add -A && git commit -m "English biographies" && git push   # publish
+```
+`data/en/bios.jsonl` is kept in the repo, so a full rebuild keeps the translations and a later `submit` only sends new or failed ones.
 
 ## Deploy
 Live at https://ozzybern-spec.github.io/israeli-yahrtzeit/. GitHub Pages publishes straight from `main` (Settings → Pages → Deploy from a branch → `main`, `/ (root)`), so pushing to `main` updates the site. `.github/workflows/test.yml` runs the tests on every push.

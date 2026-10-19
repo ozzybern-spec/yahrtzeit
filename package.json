@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/ozzybern-spec/israeli-yahrtzeit#readme",
   "devDependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
     "@hebcal/hdate": "0.22.8"
   },
   "private": true,

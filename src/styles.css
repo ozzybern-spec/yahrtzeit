@@ -308,7 +308,6 @@ html[dir='rtl'] .detail dd { text-align: left; }
 .bio-text p { margin: 0 0 10px; }
 .bio-text p:last-child { margin-bottom: 0; }
 .bio.collapsed .bio-text { max-height: 11.5em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
-.bio-translate { display: inline-block; margin: -2px 0 10px; color: var(--gold); font-size: .88rem; }
 .bio-more { margin-top: 6px; color: var(--gold); font-weight: 500; font-size: .92rem; }
 .report { display: block; margin-top: 14px; text-align: center; font-size: .82rem; color: var(--muted); }
 .sheet-context { color: var(--muted); font-size: .92rem; text-align: center; margin: 14px 0 0; }

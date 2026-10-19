@@ -107,7 +107,7 @@ function indexEntry(p) {
 }
 
 function details(p) {
-  const keys = ['parents', 'parentsEn', 'place', 'burial', 'survivors', 'diedOfWounds', 'mia', 'source', 'cv'];
+  const keys = ['parents', 'parentsEn', 'place', 'burial', 'survivors', 'diedOfWounds', 'mia', 'source', 'cv', 'cvEn'];
   return Object.fromEntries(keys.filter((k) => p[k]).map((k) => [k, p[k]]));
 }
 
@@ -116,6 +116,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const raw = readIzkorRaw();
   const izkor = loadIzkor(raw);
   const people = [...laad.people, ...izkor.people].sort((a, b) => a.died.localeCompare(b.died));
+
+  // English biographies from scripts/translate-bios.mjs.
+  const biosFile = new URL('en/bios.jsonl', root);
+  const biosEn = new Map(existsSync(biosFile)
+    ? readFileSync(biosFile, 'utf8').split('\n').filter(Boolean).map((l) => { const b = JSON.parse(l); return [b.id, b.en]; }) : []);
+  for (const p of people) if (biosEn.has(p.id)) p.cvEn = biosEn.get(p.id);
 
   // Fill English where the sources have none (official spellings first; see english.mjs).
   const maps = englishMaps(raw);

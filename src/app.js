@@ -175,23 +175,16 @@ function detailRow(label, value) {
 const CORRECTIONS_URL = 'https://laad.btl.gov.il/Web/He/ContactUs/Default.aspx';
 const IZKOR_CONTACT_URL = 'https://www.izkor.gov.il/contact';
 
-/** The official page through Google Translate (the sources publish Hebrew biographies only). */
-function translatedUrl(source) {
-  const u = new URL(source);
-  u.searchParams.set('_x_tr_sl', 'iw');
-  u.searchParams.set('_x_tr_tl', 'en');
-  u.hostname = `${u.hostname.replace(/-/g, '--').replace(/\./g, '-')}.translate.goog`;
-  return u.toString();
-}
-
 /** Biography from the official record, collapsed to a few lines at first. */
-function bioSection(cv, source) {
+// English mode shows the translation (scripts/translate-bios.mjs) when there is one.
+function bioSection(p) {
   const t = strings[state.lang];
-  const text = el('div', { class: 'bio-text', dir: 'rtl', lang: 'he' }, ...cv.split(/\n{2,}/).map((para) => el('p', {}, para)));
+  const english = state.lang === 'en' && p.cvEn;
+  const body = english ? p.cvEn : p.cv;
+  const text = el('div', { class: 'bio-text', dir: english ? 'ltr' : 'rtl', lang: english ? 'en' : 'he' },
+    ...body.split(/\n{2,}/).map((para) => el('p', {}, para)));
   const more = el('button', { class: 'bio-more', type: 'button', hidden: true }, t.readMore);
-  const box = el('section', { class: 'bio collapsed' }, el('h3', {}, t.bioTitle),
-    state.lang === 'en' && source && el('a', { class: 'bio-translate', href: translatedUrl(source), target: '_blank', rel: 'noopener' }, t.readTranslated),
-    text, more);
+  const box = el('section', { class: 'bio collapsed' }, el('h3', {}, english || state.lang === 'he' ? t.bioTitle : t.bioTitleHe), text, more);
   more.addEventListener('click', () => { box.classList.remove('collapsed'); more.hidden = true; });
   requestAnimationFrame(() => { more.hidden = text.scrollHeight <= text.clientHeight + 4; });
   return box;
@@ -249,7 +242,7 @@ async function openSheet(base) {
       detailRow(t.burial, p.mia ? t.burialUnknown : pick(p.burial, L)),
       detailRow(t.survivors(p.gender), pick(p.survivors, L)),
     ),
-    p.cv && bioSection(p.cv, p.source),
+    p.cv && bioSection(p),
     p.context && el('p', { class: 'sheet-context', dir: 'auto' }, pick(p.context, L)),
     el('div', { class: 'actions' },
       copy,
