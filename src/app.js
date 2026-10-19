@@ -524,7 +524,7 @@ function renderToday() {
   const all = allOn(state.date);
   renderPeriods($('#today-periods'), all);
   const list = all.filter(passes).sort((a, b) => a.died.localeCompare(b.died));
-  $('#count').textContent = list.length === 0 ? t.countZero : list.length === 1 ? t.countOne : t.countMany(list.length);
+  $('#count').textContent = list.length === 0 ? t.countZero : list.length === 1 ? t.countOne : t.countMany(fmtNum(list.length, L));
   const out = $('#list');
   out.replaceChildren(...(list.length
     ? groupByEvent(list).flatMap((g) => [
@@ -629,7 +629,7 @@ function render() {
     if (typeof v === 'string') n.textContent = v;
   }
   $('#lang').textContent = t.lang;
-  $('#brand').setAttribute('aria-label', t.appName);
+  $('#theme').setAttribute('aria-label', t.themeTitle);
   $('#lang').setAttribute('aria-label', t.langLabel);
   $('#prev').setAttribute('aria-label', t.prev);
   $('#next').setAttribute('aria-label', t.next);
@@ -685,6 +685,7 @@ function bind() {
   }
   $('#search-year').addEventListener('click', () => { state.year = null; renderSearch(); });
   $('#tl-table-btn').addEventListener('click', () => { $('#tl-table').hidden = !$('#tl-table').hidden; renderTimeline(); });
+  $('#theme').addEventListener('click', () => { state.theme = state.theme === 'dark' ? 'light' : 'dark'; store.set('theme', state.theme); render(); });
   for (const b of $$('[data-theme-opt] button')) {
     b.addEventListener('click', () => { state.theme = b.dataset.themeVal; store.set('theme', state.theme); render(); });
   }

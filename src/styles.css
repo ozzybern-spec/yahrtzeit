@@ -74,8 +74,11 @@ html[dir='rtl'] :is(.greg-date, .group-title, .section-title, .day-wd, .cal-wd, 
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
 }
-.brand { display: flex; align-items: center; }
-svg.mark { width: 28px; height: 28px; stroke: none; }
+.icon-btn { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); border: 1px solid var(--line); }
+.icon-btn:hover { color: var(--ink); }
+.icon-btn svg { width: 17px; height: 17px; }
+:root[data-theme='dark'] .icon-btn .moon, :root:not([data-theme='dark']) .icon-btn .sun { display: none; }
+svg.mark { stroke: none; }
 .pill-btn {
   height: 30px; padding: 0 10px; border-radius: 99px;
   font: 500 .75rem/1 var(--sans); letter-spacing: .08em; color: var(--muted);
