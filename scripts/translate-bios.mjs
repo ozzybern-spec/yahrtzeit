@@ -3,7 +3,7 @@
 // YIZKOR_API_KEY (cloud sessions don't pass a variable named ANTHROPIC_API_KEY through) or ANTHROPIC_API_KEY.
 //
 //   node scripts/translate-bios.mjs sample [n]   translate n biographies now (default 20) → data/raw/bio-sample.md
-//   node scripts/translate-bios.mjs submit       one batch with every biography not yet in data/en/bios.jsonl
+//   node scripts/translate-bios.mjs submit       every biography not yet in data/en/bios.jsonl, in batches of BATCH_SIZE
 //   node scripts/translate-bios.mjs status       progress of the submitted batch
 //   node scripts/translate-bios.mjs collect      save finished translations to data/en/bios.jsonl and data/people/<id>.json
 //
@@ -17,6 +17,12 @@ const root = new URL('../data/', import.meta.url);
 const outFile = new URL('en/bios.jsonl', root);
 // Committed, so a later session can check on or collect a batch it didn't submit.
 const batchFile = new URL('en/translate-batch.json', root);
+const BATCH_SIZE = 8000;
+// {batches: [{id, count}]}; older files hold a single {id, count}.
+const recordedBatches = () => {
+  const rec = JSON.parse(readFileSync(batchFile, 'utf8'));
+  return rec.batches || [rec];
+};
 
 const SYSTEM = `You translate Hebrew memorial biographies of Israelis killed in wars and terror attacks into English for a memorial website.
 
@@ -121,40 +127,54 @@ if (cmd === 'sample') {
   console.log(`tokens: ${usage.input} in, ${usage.cacheWrite} cache write, ${usage.cacheRead} cache read, ${usage.output} out; estimated full batch: $${(perBio * total).toFixed(2)} for ${total}`);
 } else if (cmd === 'submit') {
   if (existsSync(batchFile)) {
-    console.error('A batch is already recorded in data/en/translate-batch.json; run status/collect first.');
+    console.error('Batches are already recorded in data/en/translate-batch.json; run status/collect first.');
     process.exit(1);
   }
   const { work } = loadWork();
   if (!work.length) { console.log('nothing to translate'); process.exit(0); }
-  const batch = await client.messages.batches.create({
-    requests: work.map((w) => ({ custom_id: w.id, params: params(w) })),
-  });
-  writeFileSync(batchFile, JSON.stringify({ id: batch.id, count: work.length, created: new Date().toISOString() }));
-  console.log(`submitted ${work.length} biographies as batch ${batch.id}`);
+  // The Batches API takes at most 256 MB per batch, and each request repeats the system prompt,
+  // so everything at once (~28,000) is too big: send it in chunks.
+  const batches = [];
+  for (let i = 0; i < work.length; i += BATCH_SIZE) {
+    const chunk = work.slice(i, i + BATCH_SIZE);
+    const batch = await client.messages.batches.create({
+      requests: chunk.map((w) => ({ custom_id: w.id, params: params(w) })),
+    });
+    batches.push({ id: batch.id, count: chunk.length });
+    // Written after each chunk, so a failure part way still records what was sent.
+    writeFileSync(batchFile, JSON.stringify({ batches, created: new Date().toISOString() }));
+    console.log(`submitted ${chunk.length} biographies as batch ${batch.id}`);
+  }
 } else if (cmd === 'status') {
-  const { id } = JSON.parse(readFileSync(batchFile, 'utf8'));
-  const b = await client.messages.batches.retrieve(id);
-  console.log(b.processing_status, JSON.stringify(b.request_counts));
+  for (const { id } of recordedBatches()) {
+    const b = await client.messages.batches.retrieve(id);
+    console.log(id, b.processing_status, JSON.stringify(b.request_counts));
+  }
 } else if (cmd === 'collect') {
-  const { id } = JSON.parse(readFileSync(batchFile, 'utf8'));
-  const b = await client.messages.batches.retrieve(id);
-  if (b.processing_status !== 'ended') { console.log(`not finished: ${b.processing_status}`); process.exit(0); }
+  const ids = recordedBatches().map((b) => b.id);
+  for (const id of ids) {
+    const b = await client.messages.batches.retrieve(id);
+    if (b.processing_status !== 'ended') { console.log(`not finished: ${id} ${b.processing_status}`); process.exit(0); }
+  }
   const { done } = loadWork();
   let ok = 0, failed = 0;
-  for await (const r of await client.messages.batches.results(id)) {
-    if (done.has(r.custom_id)) continue;
-    if (r.result.type === 'succeeded' && r.result.message.stop_reason !== 'refusal' && r.result.message.stop_reason !== 'max_tokens') {
-      const en = textOf(r.result.message);
-      appendFileSync(outFile, JSON.stringify({ id: r.custom_id, en }) + '\n');
-      // Also write it into the published file, so no full rebuild (which needs data/raw) is required.
-      const file = new URL(`people/${r.custom_id}.json`, root);
-      writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), cvEn: en }));
-      ok++;
-    } else {
-      failed++;
+  for (const id of ids) {
+    for await (const r of await client.messages.batches.results(id)) {
+      if (done.has(r.custom_id)) continue;
+      if (r.result.type === 'succeeded' && r.result.message.stop_reason !== 'refusal' && r.result.message.stop_reason !== 'max_tokens') {
+        const en = textOf(r.result.message);
+        appendFileSync(outFile, JSON.stringify({ id: r.custom_id, en }) + '\n');
+        // Also write it into the published file, so no full rebuild (which needs data/raw) is required.
+        const file = new URL(`people/${r.custom_id}.json`, root);
+        writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), cvEn: en }));
+        done.add(r.custom_id);
+        ok++;
+      } else {
+        failed++;
+      }
     }
   }
-  renameSync(batchFile, new URL(`en/translate-batch-${id}.json`, root));
+  renameSync(batchFile, new URL(`en/translate-batch-${ids[0]}.json`, root));
   console.log(`collected ${ok}; ${failed} failed (run submit again to retry them)`);
 } else {
   console.error('usage: translate-bios.mjs sample [n] | submit | status | collect');

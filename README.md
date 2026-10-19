@@ -53,7 +53,7 @@ The demo generator (`npm run demo-data`) and CSV importer (`npm run import`) sti
 `scripts/translate-bios.mjs` translates every biography with Claude Haiku 5.5 through the Message Batches API (half price; estimated about $6 for all 28,636). It needs an API key from console.anthropic.com (the Claude Max plan does not cover API use) in the environment variable `YIZKOR_API_KEY`. Cloud sessions don't pass a variable named `ANTHROPIC_API_KEY` through, so use the other name there; `ANTHROPIC_API_KEY` works when running it on your own computer.
 ```bash
 node scripts/translate-bios.mjs sample 20   # 20 biographies → data/raw/bio-sample.md, with a cost estimate for the rest
-node scripts/translate-bios.mjs submit      # one batch with everything not yet translated
+node scripts/translate-bios.mjs submit      # everything not yet translated, in batches of 8,000 (the API caps a batch at 256 MB)
 node scripts/translate-bios.mjs status      # usually done within an hour (at most 24)
 node scripts/translate-bios.mjs collect     # writes data/en/bios.jsonl and cvEn into data/people/<id>.json
 npm run bump && git add -A && git commit -m "English biographies" && git push   # publish
