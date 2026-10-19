@@ -353,7 +353,7 @@ html[dir='rtl'] .detail dd { text-align: left; }
 .report { display: block; margin-top: 16px; text-align: center; font-size: .75rem; color: var(--muted); }
 .sheet-context { color: var(--muted); font-size: .85rem; text-align: center; margin: 16px 0 0; }
 /* Copy is the main action on its own row; Share and the official source share the next. */
-.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 26px; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
 .actions .action.primary { grid-column: 1 / -1; }
 .actions .action:last-child:nth-child(even) { grid-column: 1 / -1; }
 .action {
