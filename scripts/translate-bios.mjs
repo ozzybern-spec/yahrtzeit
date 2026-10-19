@@ -24,9 +24,21 @@ Rules:
 - Translate the whole text faithfully and completely. Do not summarize, add, or comment.
 - Keep the paragraph breaks (blank lines) as in the original.
 - Tone: respectful, plain, factual English. Keep the family's warmth where it is in the original.
-- Names: use the English spellings given in the "Known names" section for the person and their family. Transliterate other names the way Israeli official English records do (e.g. Yosef, Moshe, Cohen, Tzvi).
+- Names: use the English spellings given in the "Known names" section for the person and their family. Transliterate other names the way Israeli official English records do (e.g. Yosef, Moshe, Cohen, Tzvi). Nicknames that are English or European names take their usual spelling (דבי → Debbie, ג'ק → Jack).
 - Hebrew dates: write them as day, month, year, e.g. ד' בניסן תש"ד → 4 Nisan 5704. Keep any Gregorian date that follows, written as e.g. 28 March 1944.
 - Keep Hebrew terms with no good English equivalent transliterated, with a short gloss the first time (e.g. Palmach, the pre-state strike force).
+- Names of movements, organizations, units and institutions are proper names: transliterate them, never translate them word by word. Use the spellings in the organization list below; gloss the first mention briefly if the reader needs it. E.g. "הבונים" → Habonim (not "the Builders"); "בית החלוץ" → Beit HeHalutz (not "Halutz House").
+- Hebrew often opens with no subject ("בנם של חנה ויוסף, נולד…"). English needs one. Write the first sentence as "<English name>, son of <parents>, was born …" (or "daughter of"), with the name from "Known names". Never begin with "Son of" or "Daughter of", and never leave a sentence without a subject; later, use "he"/"she" or the first name.
+- Ranks: use the English rank from the rank list below, with no Hebrew in parentheses. Ranks of foreign armies (e.g. the British Army in World War II) are already English: write Corporal, Sergeant, etc.
+
+IDF ranks (Hebrew → English):
+טוראי → Private; טוראי ראשון → Private First Class; רב-טוראי / רב טוראי / רבט"ר → Corporal; סמל → Sergeant; סמל ראשון / סמ"ר → Staff Sergeant; רב-סמל / רס"ל → Sergeant First Class; רב-סמל ראשון / רס"ר → Master Sergeant; רב-סמל מתקדם / רס"ם → Sergeant Major; רב-סמל בכיר / רס"ב → Warrant Officer; רב-נגד / רנ"ג → Chief Warrant Officer; קצין מקצועי אקדמאי / קמ"א → Academic Officer; סגן-משנה / סג"ם → Second Lieutenant; סגן → Lieutenant; סרן → Captain; רב-סרן / רס"ן → Major; סגן-אלוף / סא"ל → Lieutenant Colonel; אלוף-משנה / אל"ם → Colonel; תת-אלוף / תא"ל → Brigadier General; אלוף → Major General; רב-אלוף / רא"ל → Lieutenant General.
+A hyphen or a space in a rank is the same rank (רב אלוף = רב-אלוף). Always match the whole rank, longest first: רב-אלוף is Lieutenant General, never Major General; רב-סרן is Major, never Captain. The IDF Chief of Staff (הרמטכ"ל) is a Lieutenant General.
+Israel Police, Border Police and Prison Service: NCO ranks take the IDF English above (רב-סמל → Sergeant First Class). Officer ranks are transliterated, with no gloss: מפקח → Mefakeah; פקד → Pakad; רב-פקד → Rav-Pakad; סגן-ניצב → Sgan-Nitzav; ניצב-משנה → Nitzav-Mishne; תת-ניצב → Tat-Nitzav; ניצב → Nitzav; רב-ניצב → Rav-Nitzav.
+"דרגת X" → "the rank of X"; "הועלה לדרגת X" → "was promoted to X"; "הועלה לדרגה לאחר מותו" → "was promoted posthumously".
+
+Organizations (Hebrew → English):
+ההגנה → the Haganah; הפלמ"ח → the Palmach; אצ"ל / האירגון הצבאי הלאומי → the Irgun; לח"י → Lehi; חי"ש → the Hish (Haganah field corps); חי"ם → the Him (Haganah garrison corps); גדנ"ע → Gadna; נח"ל → Nahal; הנוטרים / נוטר → the Notrim (Jewish Supernumerary Police) / a Notar; הבריגדה היהודית → the Jewish Brigade; ההסתדרות → the Histadrut; הסוכנות היהודית → the Jewish Agency; קרן היסוד → Keren Hayesod; הקרן הקיימת → the Jewish National Fund; העלייה השנייה → the Second Aliyah; עלייה ב' → Aliyah Bet; החלוץ → HeHalutz; הבונים → Habonim; השומר הצעיר → Hashomer Hatzair; בני עקיבא → Bnei Akiva; בית"ר → Betar; הנוער העובד → HaNoar HaOved; מחנות העולים → Machanot HaOlim; תנועת המושבים → the Moshav Movement; הקיבוץ המאוחד → HaKibbutz HaMeuhad; קיבוץ → kibbutz; מושב → moshav; מושב עובדים → moshav ovdim; ישיבה → yeshiva; צה"ל → the IDF; שב"כ → the Shin Bet; המוסד → the Mossad; משמר הגבול → the Border Police; חיל האוויר → the Air Force; חיל הים → the Navy; חיל השריון → the Armored Corps; חיל התותחנים → the Artillery Corps; חיל ההנדסה → the Combat Engineering Corps; חטיבת גולני → the Golani Brigade; חטיבת הצנחנים → the Paratroopers Brigade; חטיבת גבעתי → the Givati Brigade; סיירת מטכ"ל → Sayeret Matkal; מלחמת העצמאות → the War of Independence; מלחמת ששת הימים → the Six-Day War; מלחמת ההתשה → the War of Attrition; מלחמת יום הכיפורים → the Yom Kippur War; מלחמת לבנון → the Lebanon War; האינתיפאדה → the Intifada.
 - Output only the English translation.`;
 
 function knownNames(id, index) {
@@ -61,7 +73,8 @@ function params({ cv, names }) {
     // Plain translation: no extended reasoning needed, which also keeps cost down.
     thinking: { type: 'disabled' },
     output_config: { effort: 'low' },
-    system: SYSTEM,
+    // Same system prompt for every request: cache it so most of its tokens bill at the cache-read rate.
+    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{
       role: 'user',
       content: `Known names:\n${names.join('\n') || '(none)'}\n\nBiography:\n${cv}`,
@@ -93,17 +106,19 @@ if (cmd === 'sample') {
     const msg = await client.messages.create(params(w));
     usage.input += msg.usage.input_tokens;
     usage.output += msg.usage.output_tokens;
+    usage.cacheWrite = (usage.cacheWrite || 0) + (msg.usage.cache_creation_input_tokens || 0);
+    usage.cacheRead = (usage.cacheRead || 0) + (msg.usage.cache_read_input_tokens || 0);
     if (msg.stop_reason === 'refusal') { md += `## ${w.id}\n\n(refused)\n\n`; continue; }
     md += `## ${w.id}\n\n### Hebrew\n\n${w.cv}\n\n### English\n\n${textOf(msg)}\n\n`;
     process.stdout.write('.');
   }
   mkdirSync(new URL('raw/', root), { recursive: true });
   writeFileSync(new URL('raw/bio-sample.md', root), md);
-  // Haiku 5.5: $0.10 / $0.50 per million tokens; the batch API halves that.
-  const perBio = (usage.input * 0.10 + usage.output * 0.50) / 1e6 / picks.length / 2;
+  // Haiku 5.5: $0.10 / $0.50 per million tokens (cache writes 1.25×, cache reads 0.1× input); the batch API halves that.
+  const perBio = (usage.input * 0.10 + usage.cacheWrite * 0.125 + usage.cacheRead * 0.01 + usage.output * 0.50) / 1e6 / picks.length / 2;
   const total = loadWork().work.length;
   console.log(`\nwrote data/raw/bio-sample.md (${picks.length} biographies)`);
-  console.log(`tokens: ${usage.input} in, ${usage.output} out; estimated full batch: $${(perBio * total).toFixed(2)} for ${total}`);
+  console.log(`tokens: ${usage.input} in, ${usage.cacheWrite} cache write, ${usage.cacheRead} cache read, ${usage.output} out; estimated full batch: $${(perBio * total).toFixed(2)} for ${total}`);
 } else if (cmd === 'submit') {
   if (existsSync(batchFile)) {
     console.error('A batch is already recorded in data/en/translate-batch.json; run status/collect first.');
