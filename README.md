@@ -50,7 +50,7 @@ Before relying on the data, confirm with the Ministry of Defense and the Nationa
 The demo generator (`npm run demo-data`) and CSV importer (`npm run import`) still write the old single-file `data/fallen.json` format.
 
 ### English biographies (one-time translation)
-`scripts/translate-bios.mjs` translates every biography with Claude Haiku 5.5 through the Message Batches API (half price; estimated about $6 for all 28,636). It needs an `ANTHROPIC_API_KEY` from console.anthropic.com in the environment (the Claude Max plan does not cover API use).
+`scripts/translate-bios.mjs` translates every biography with Claude Haiku 5.5 through the Message Batches API (half price; estimated about $6 for all 28,636). It needs an API key from console.anthropic.com (the Claude Max plan does not cover API use) in the environment variable `YIZKOR_API_KEY`. Cloud sessions don't pass a variable named `ANTHROPIC_API_KEY` through, so use the other name there; `ANTHROPIC_API_KEY` works when running it on your own computer.
 ```bash
 node scripts/translate-bios.mjs sample 20   # 20 biographies → data/raw/bio-sample.md, with a cost estimate for the rest
 node scripts/translate-bios.mjs submit      # one batch with everything not yet translated

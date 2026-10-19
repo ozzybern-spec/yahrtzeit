@@ -1,5 +1,6 @@
 // Translate the Hebrew biographies into English once, with Claude Haiku 5.5
-// through the Message Batches API (half price). Needs ANTHROPIC_API_KEY.
+// through the Message Batches API (half price). Needs an API key from console.anthropic.com in
+// YIZKOR_API_KEY (cloud sessions don't pass a variable named ANTHROPIC_API_KEY through) or ANTHROPIC_API_KEY.
 //
 //   node scripts/translate-bios.mjs sample [n]   translate n biographies now (default 20) → data/raw/bio-sample.md
 //   node scripts/translate-bios.mjs submit       one batch with every biography not yet in data/en/bios.jsonl
@@ -70,7 +71,12 @@ function params({ cv, names }) {
 
 const textOf = (message) => message.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
 
-const client = new Anthropic();
+const apiKey = process.env.YIZKOR_API_KEY || process.env.ANTHROPIC_API_KEY;
+if (!apiKey) {
+  console.error('Set YIZKOR_API_KEY (or ANTHROPIC_API_KEY) to an API key from console.anthropic.com.');
+  process.exit(1);
+}
+const client = new Anthropic({ apiKey });
 const [cmd = 'sample', arg] = process.argv.slice(2);
 
 if (cmd === 'sample') {
