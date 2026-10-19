@@ -1,6 +1,7 @@
 import { HDate, gematriya, daysInMonth } from '@hebcal/hdate';
 import { strings } from './i18n.js';
 import { PERIODS, OTHER, periodOf } from './periods.js';
+import { koren } from './koren.js';
 import {
   parseISO, toISO, deathHDate, buildIndex, nextYahrzeit, anniversaryNumber, prayerName, yahrzeitIn,
 } from './yahrzeit.js';
@@ -85,7 +86,7 @@ function expand(o) {
 
 const fmtHebrew = (hd, L) => (L === 'he'
   ? hd.renderGematriya(true)
-  : `${hd.getDate()} ${hd.getMonthName()} ${hd.getFullYear()}`);
+  : `${hd.getDate()} ${koren(hd.getMonthName())} ${hd.getFullYear()}`);
 const fmtGreg = (date, L, opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) =>
   date.toLocaleDateString(L === 'he' ? 'he-IL' : 'en-GB', opts);
 const pick = (obj, L) => obj && (obj[L] || obj.he);
@@ -180,7 +181,7 @@ const IZKOR_CONTACT_URL = 'https://www.izkor.gov.il/contact';
 function bioSection(p) {
   const t = strings[state.lang];
   const english = state.lang === 'en' && p.cvEn;
-  const body = english ? p.cvEn : p.cv;
+  const body = english ? koren(p.cvEn) : p.cv;
   const text = el('div', { class: 'bio-text', dir: english ? 'ltr' : 'rtl', lang: english ? 'en' : 'he' },
     ...body.split(/\n{2,}/).map((para) => el('p', {}, para)));
   const more = el('button', { class: 'bio-more', type: 'button', hidden: true }, t.readMore);
@@ -387,7 +388,7 @@ let calMonth = null; // HDate of the first day of the month on screen
 
 const monthTitle = (hd, L) => (L === 'he'
   ? hd.renderGematriya(true).split(' ').slice(1).join(' ')
-  : `${hd.getMonthName()} ${hd.getFullYear()}`);
+  : `${koren(hd.getMonthName())} ${hd.getFullYear()}`);
 
 function openCalendar() {
   const hd = hdateFor(state.date);

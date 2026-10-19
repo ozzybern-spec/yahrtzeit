@@ -190,7 +190,7 @@ export const strings = {
     installHintIos: 'In Safari: tap Share ⬆︎, then “Add to Home Screen”',
     installClose: 'Close',
     aboutTitle: 'About',
-    aboutBody: 'A daily yahrzeit calendar for Israel’s fallen soldiers and security personnel and for civilian victims of terror, so we can say hashkavah, learn mishnayot and say Tehillim in their memory.',
+    aboutBody: 'A daily yahrzeit calendar for Israel’s fallen soldiers and security personnel and for civilian victims of terror, so we can say hashkava, learn mishnayot and say Tehillim in their memory.',
     aboutFeatures: 'Each day you can copy all the names for prayer in one tap, share an image of the day, and add a yahrzeit to your calendar from the details page. On the timeline every dot is one person; tap a dot to see the name.',
     aboutEnglish: 'English names come from the Ministry of Defense izkor site. Names without an official English spelling (including all civilians) are transliterated and may contain mistakes. Biographies are published in Hebrew only; the English versions are machine translations.',
     aboutCalc: 'Dates follow the Hebrew calendar. A death after sunset counts as the next Hebrew day. The war filter uses official war dates only.',

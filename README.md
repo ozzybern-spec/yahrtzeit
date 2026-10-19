@@ -1,6 +1,6 @@
 # Israeli Yahrtzeit — יזכור
 
-A daily yahrzeit list for Israel's fallen soldiers and security personnel and for civilian victims of terror. Open the site and it shows everyone whose yahrzeit falls on today's Hebrew date, so people can say *hashkavah*, learn *mishnayot* or say *Tehillim* for them.
+A daily yahrzeit list for Israel's fallen soldiers and security personnel and for civilian victims of terror. Open the site and it shows everyone whose yahrzeit falls on today's Hebrew date, so people can say *hashkava*, learn *mishnayot* or say *Tehillim* for them.
 
 > **Data (October 2026):** about 25,800 fallen soldiers and security personnel from the Ministry of Defense site, izkor.gov.il, and 5,296 civilian victims of terror from the National Insurance Institute site, laad.btl.gov.il. Records whose official dates disagree or are partial are listed in `data/needs-review.txt`.
 
@@ -66,6 +66,6 @@ npm run bump && git add -A && git commit -m "English biographies" && git push   
 Live at https://ozzybern-spec.github.io/israeli-yahrtzeit/. GitHub Pages publishes straight from `main` (Settings → Pages → Deploy from a branch → `main`, `/ (root)`), so pushing to `main` updates the site. `.github/workflows/test.yml` runs the tests on every push.
 
 ## Possible next steps
-- Sign-ups so people can claim a name to say *hashkavah* or learn *mishnayot* for (this needs a small backend).
+- Sign-ups so people can claim a name to say *hashkava* or learn *mishnayot* for (this needs a small backend).
 - A daily email or WhatsApp digest.
 - Visitors adding memories or photos (needs a backend and moderation).
