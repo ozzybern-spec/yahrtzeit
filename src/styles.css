@@ -365,7 +365,12 @@ html[dir='rtl'] .detail dd { text-align: left; }
 html[dir='rtl'] .tl-sub { font: 400 .98rem/1.5 var(--hebrew); }
 .tl-hero + .segmented { justify-content: flex-start; }
 .tl-jump { justify-content: flex-start !important; }
-.tl-legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 18px 0 6px; }
+.tl-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 6px; }
+.tl-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.tl-zoom { display: flex; gap: 6px; flex: none; }
+.tl-zoom .icon-btn { width: 30px; height: 30px; }
+.tl-zoom .icon-btn:disabled { opacity: .35; cursor: default; }
+.tl-chart { touch-action: pan-y; }
 .tl-key { display: inline-flex; align-items: center; gap: 6px; }
 .tl-swatch { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-inline-end: 4px; }
 .tl-swatch.soldier { background: var(--soldier); }

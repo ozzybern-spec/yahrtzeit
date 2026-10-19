@@ -363,8 +363,12 @@ const fmtNum = (n, L) => n.toLocaleString(L === 'he' ? 'he-IL' : 'en-US');
  * then civilians on a fresh line. Each year is its own canvas (one tall canvas
  * would pass the browser's size limit). Tap a dot for the name, then details.
  */
-const DOT = 2.6, DOT_GAP = 1.5, PITCH = DOT + DOT_GAP;
+// Dot size follows the zoom (pinch, or the − / + buttons).
+let tlZoom = 1;
+const dotSize = () => 2.6 * tlZoom;
+const pitch = () => (2.6 + 1.5) * tlZoom;
 let tlBlocks = [];
+let tlWidth = 300;
 
 function renderTimeline() {
   const t = strings[state.lang];
@@ -404,20 +408,16 @@ function renderTimeline() {
   }, per[L], el('span', { class: 'chip-count' }, fmtNum(counts.get(per.key) || 0, L)))));
 
   const box = $('#tl-chart');
-  const width = Math.max(240, box.clientWidth || 350);
-  const label = 52;
-  const per = Math.floor((width - label) / PITCH);
+  tlWidth = Math.max(188, (box.clientWidth || 350) - 52);
   tlBlocks = [];
   const nodes = [];
   for (const y of years) {
     const v = byYear.get(y);
     const war = anchors.get(y);
     if (war) nodes.push(el('h3', { class: 'tl-war-h', id: `tl-war-${war.key}` }, war[L]));
-    const ls = Math.ceil(v.soldier.length / per);
-    const lines = ls + Math.ceil(v.terror.length / per);
     const n = v.soldier.length + v.terror.length;
     const canvas = el('canvas', { class: 'tl-dots', 'aria-label': `${y}: ${fmtNum(n, L)}` });
-    const block = { y, v, ls, per, canvas, w: width - label, h: Math.max(lines * PITCH, 6), rtl, sel: null };
+    const block = { y, v, canvas, w: tlWidth, rtl, sel: null };
     canvas.addEventListener('click', (e) => tapDot(block, e));
     tlBlocks.push(block);
     nodes.push(el('div', { class: `tl-year${n >= 500 ? ' big' : ''}` },
@@ -425,7 +425,62 @@ function renderTimeline() {
       canvas));
   }
   box.replaceChildren(...nodes);
-  for (const b of tlBlocks) drawDots(b);
+  layoutDots();
+}
+
+function layoutDots() {
+  const per = Math.max(1, Math.floor(tlWidth / pitch()));
+  for (const b of tlBlocks) {
+    b.per = per;
+    b.ls = Math.ceil(b.v.soldier.length / per);
+    b.h = Math.max((b.ls + Math.ceil(b.v.terror.length / per)) * pitch(), 6);
+    drawDots(b);
+  }
+  $('#tl-zoom-out').disabled = tlZoom <= 1;
+  $('#tl-zoom-in').disabled = tlZoom >= 5;
+}
+
+/** Zoom keeping the point at screen height `cy` (a year block) in place. */
+function setZoom(z, cy = window.innerHeight / 2) {
+  z = Math.min(5, Math.max(1, z));
+  if (Math.abs(z - tlZoom) < 0.01) return;
+  const b = tlBlocks.find((o) => o.canvas.getBoundingClientRect().bottom >= cy) || tlBlocks[0];
+  const r = b?.canvas.getBoundingClientRect();
+  const frac = r && r.height ? (cy - r.top) / r.height : 0;
+  tlZoom = z;
+  hideDotTip();
+  layoutDots();
+  if (b) {
+    const r2 = b.canvas.getBoundingClientRect();
+    window.scrollBy(0, r2.top + frac * r2.height - cy);
+  }
+}
+
+// Two-finger pinch on the dots; the browser's own page zoom is off there (touch-action).
+function initPinch() {
+  const box = $('#tl-chart');
+  let start = null;
+  let frame = 0;
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  box.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) start = { d: dist(e.touches), z: tlZoom, cy: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+  }, { passive: true });
+  box.addEventListener('touchmove', (e) => {
+    if (!start || e.touches.length !== 2) return;
+    e.preventDefault();
+    const z = start.z * dist(e.touches) / start.d;
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => setZoom(z, start.cy));
+  }, { passive: false });
+  box.addEventListener('touchend', (e) => { if (e.touches.length < 2) start = null; });
+  // Trackpad pinch and ctrl + scroll on computers.
+  box.addEventListener('wheel', (e) => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    setZoom(tlZoom * Math.exp(-e.deltaY / 200), e.clientY);
+  }, { passive: false });
+  $('#tl-zoom-in').addEventListener('click', () => setZoom(tlZoom * 1.6));
+  $('#tl-zoom-out').addEventListener('click', () => setZoom(tlZoom / 1.6));
 }
 
 function dotSprites() {
@@ -433,11 +488,11 @@ function dotSprites() {
   const dark = document.documentElement.dataset.theme === 'dark';
   const dpr = window.devicePixelRatio || 1;
   const make = (color) => {
-    const R = 4 * DOT, c = document.createElement('canvas');
+    const DOT = 2.6 * 5, R = 4 * DOT, c = document.createElement('canvas');
     c.width = c.height = Math.ceil(R * 2 * dpr);
     const g = c.getContext('2d');
     g.scale(dpr, dpr);
-    if (dark) { g.shadowColor = color; g.shadowBlur = 4; }
+    if (dark) { g.shadowColor = color; g.shadowBlur = 4 * 5; }
     g.fillStyle = color;
     g.beginPath(); g.arc(R, R, DOT / 2, 0, Math.PI * 2); g.fill();
     return c;
@@ -449,8 +504,8 @@ function dotSprites() {
 function dotXY(b, cat, i) {
   const line = (cat === 'soldier' ? 0 : b.ls) + Math.floor(i / b.per);
   const col = i % b.per;
-  const x = col * PITCH + DOT / 2 + 1;
-  return { x: b.rtl ? b.w - x : x, y: line * PITCH + DOT / 2 + 1 };
+  const x = col * pitch() + dotSize() / 2 + 1;
+  return { x: b.rtl ? b.w - x : x, y: line * pitch() + dotSize() / 2 + 1 };
 }
 
 let sprites = null;
@@ -464,7 +519,7 @@ function drawDots(b) {
   canvas.style.height = `${b.h + 2}px`;
   const g = canvas.getContext('2d');
   g.scale(dpr, dpr);
-  const R = 4 * DOT;
+  const R = 4 * dotSize();
   for (const cat of ['soldier', 'terror']) {
     b.v[cat].forEach((p, i) => {
       const { x, y } = dotXY(b, cat, i);
@@ -474,15 +529,15 @@ function drawDots(b) {
   if (b.sel) {
     const { x, y } = dotXY(b, b.sel.cat, b.sel.i);
     g.strokeStyle = sprites.ink; g.lineWidth = 1.2;
-    g.beginPath(); g.arc(x, y, DOT + 1.2, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.arc(x, y, dotSize() + 1.2, 0, Math.PI * 2); g.stroke();
   }
 }
 
 function tapDot(b, e) {
   const r = b.canvas.getBoundingClientRect();
   const px = b.rtl ? r.right - e.clientX : e.clientX - r.left;
-  const col = Math.max(0, Math.min(b.per - 1, Math.floor(px / PITCH)));
-  const line = Math.max(0, Math.floor((e.clientY - r.top) / PITCH));
+  const col = Math.max(0, Math.min(b.per - 1, Math.floor(px / pitch())));
+  const line = Math.max(0, Math.floor((e.clientY - r.top) / pitch()));
   const cat = line < b.ls ? 'soldier' : 'terror';
   const i = (line - (cat === 'soldier' ? 0 : b.ls)) * b.per + col;
   const p = b.v[cat][i];
@@ -671,6 +726,8 @@ function render() {
   }
   $('#lang').textContent = t.lang;
   $('#theme').setAttribute('aria-label', t.themeTitle);
+  $('#tl-zoom-in').setAttribute('aria-label', t.zoomIn);
+  $('#tl-zoom-out').setAttribute('aria-label', t.zoomOut);
   $('#lang').setAttribute('aria-label', t.langLabel);
   $('#prev').setAttribute('aria-label', t.prev);
   $('#next').setAttribute('aria-label', t.next);
@@ -725,6 +782,7 @@ function bind() {
     b.addEventListener('click', () => { state.category = b.dataset.cat; render(); });
   }
   $('#search-year').addEventListener('click', () => { state.year = null; renderSearch(); });
+  initPinch();
   // Close the dot popup on scroll or a tap elsewhere.
   window.addEventListener('scroll', hideDotTip, { passive: true });
   document.addEventListener('click', (e) => { if (!e.target.closest('#tl-tip, .tl-dots')) hideDotTip(); });
