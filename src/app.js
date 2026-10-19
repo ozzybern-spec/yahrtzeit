@@ -2,7 +2,7 @@ import { HDate, gematriya, daysInMonth } from '@hebcal/hdate';
 import { strings } from './i18n.js';
 import { PERIODS, OTHER, periodOf } from './periods.js';
 import {
-  parseISO, toISO, deathHDate, buildIndex, nextYahrzeit, anniversaryNumber, prayerName,
+  parseISO, toISO, deathHDate, buildIndex, nextYahrzeit, anniversaryNumber, prayerName, yahrzeitIn,
 } from './yahrzeit.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -111,15 +111,22 @@ function svg(path) {
 
 /* ---------- Cards and sheet ---------- */
 
+/** First letters of the first and last name, for people without a photo. */
+function initials(p) {
+  const words = (pick(p.name, state.lang) || '').replace(/\(.*?\)/g, ' ').split(/\s+/).filter((w) => /\p{L}/u.test(w));
+  const first = (w) => (w ? [...w.replace(/^[^\p{L}]+/u, '')][0] || '' : '');
+  return (first(words[0]) + (words.length > 1 ? first(words[words.length - 1]) : '')).toUpperCase();
+}
+
 function avatar(p, cls = 'avatar') {
   const box = el('span', { class: cls, 'aria-hidden': 'true' });
-  const candle = () => el('span', { class: 'candle' }, el('span', { class: 'flame' }));
+  const letters = () => el('span', { class: 'initials' }, initials(p));
   if (p.photo) {
     const img = el('img', { src: p.photo, alt: '', loading: 'lazy', decoding: 'async', referrerpolicy: 'no-referrer' });
-    img.addEventListener('error', () => img.replaceWith(candle()));
+    img.addEventListener('error', () => img.replaceWith(letters()));
     box.append(img);
   } else {
-    box.append(candle());
+    box.append(letters());
   }
   return box;
 }
@@ -144,9 +151,6 @@ function summary(p, L, inGroup) {
 function card(p, { showNext = false, inGroup = false } = {}) {
   const t = strings[state.lang];
   const L = state.lang;
-  // The category label only helps when both categories are on screen.
-  const multiCat = state.category === 'all' && hasBothCategories();
-
   let badge;
   if (showNext) {
     const up = nextYahrzeit(p, hdateFor(startOfDay(new Date())), state.adar);
@@ -158,11 +162,7 @@ function card(p, { showNext = false, inGroup = false } = {}) {
     el('span', { class: 'card-main' },
       el('span', { class: 'card-name', dir: 'auto' }, pick(p.name, L)),
       el('span', { class: 'card-sub', dir: L === 'he' ? 'rtl' : 'ltr' }, ...summary(p, L, inGroup)),
-      (badge || multiCat) && el('span', { class: 'card-meta' },
-        multiCat && el('span', { class: `dot ${p.category}` }),
-        multiCat && t[`${p.category}Short`],
-        badge && el('span', { class: 'badge' }, badge),
-      ),
+      badge && el('span', { class: 'card-meta' }, el('span', { class: 'badge' }, badge)),
     ),
     el('span', { class: 'chev', 'aria-hidden': 'true' }),
   );
@@ -221,6 +221,9 @@ async function openSheet(base) {
     navigator.share({ text: t.shareText(pn, fmtHebrew(died, L)), url: location.href }).catch(() => {});
   });
 
+  const cal = el('button', { class: 'action', type: 'button', onclick: () => downloadIcs(p) },
+    svg('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v4M10 15h4"/>'), t.addCal);
+
   body.replaceChildren(...[
     el('div', { class: 'sheet-head' },
       avatar(p, 'portrait'),
@@ -247,6 +250,7 @@ async function openSheet(base) {
     el('div', { class: 'actions' },
       copy,
       share,
+      cal,
       p.source && el('a', { class: 'action', href: p.source, target: '_blank', rel: 'noopener' },
         svg('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'), t.source),
     ),
@@ -261,6 +265,127 @@ async function openSheet(base) {
   document.activeElement?.blur();
   dlg.scrollTop = 0;
   requestAnimationFrame(() => dlg.classList.add('open'));
+}
+
+/** "Name ben/bat Father" with the parents from the person's details file. */
+async function fullPrayerName(p, L) {
+  const extra = await loadDetails(p);
+  const parents = L === 'en' && extra.parentsEn ? extra.parentsEn : extra.parents;
+  return prayerName({ ...p, parents }, L);
+}
+
+/** Runs fn over items, a few at a time, keeping the order. */
+async function mapLimit(items, n, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (next < items.length) { const i = next++; out[i] = await fn(items[i], i); }
+  }));
+  return out;
+}
+
+let todayList = [];
+
+async function copyAllNames(btn) {
+  const t = strings[state.lang];
+  const L = state.lang;
+  if (!todayList.length) return;
+  const label = btn.lastChild.textContent;
+  btn.disabled = true;
+  btn.lastChild.textContent = t.preparing;
+  try {
+    const names = await mapLimit(todayList, 8, (p) => fullPrayerName(p, L));
+    const head = `${fmtHebrew(hdateFor(state.date), L)} · ${todayList.length === 1 ? t.countOne : t.countMany(fmtNum(todayList.length, L))}`;
+    await navigator.clipboard.writeText([head, '', ...names].join('\n'));
+    toast(t.copiedAll(fmtNum(names.length, L)));
+  } catch { /* clipboard unavailable */ }
+  btn.disabled = false;
+  btn.lastChild.textContent = label;
+}
+
+/** A calendar file with the next ten yahrzeits (Hebrew dates move, so no yearly repeat rule). */
+async function downloadIcs(p) {
+  const t = strings[state.lang];
+  const L = state.lang;
+  const name = await fullPrayerName(p, L);
+  const now = hdateFor(startOfDay(new Date())).getFullYear();
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const esc = (x) => String(x).replace(/[\\;,]/g, (m) => `\\${m}`).replace(/\n/g, '\\n');
+  const day = (d) => toISO(d).replace(/-/g, '');
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Israeli Yahrtzeit//EN', 'CALSCALE:GREGORIAN'];
+  for (let y = now; y < now + 10; y++) {
+    const hd = yahrzeitIn(p, y, state.adar);
+    if (!hd) continue;
+    const d = hd.greg();
+    lines.push('BEGIN:VEVENT', `UID:${p.id}-${y}@israeli-yahrtzeit`, `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${day(d)}`, `DTEND;VALUE=DATE:${day(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1))}`,
+      `SUMMARY:${esc(t.calSummary(name))}`, `DESCRIPTION:${esc(`${fmtHebrew(hd, L)}. ${t.calNote}\n${location.origin}${location.pathname}`)}`,
+      'TRANSP:TRANSPARENT', 'END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
+  const file = new File([lines.join('\r\n')], `yahrzeit-${p.id}.ics`, { type: 'text/calendar' });
+  const url = URL.createObjectURL(file);
+  el('a', { href: url, download: file.name }).click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/** A portrait image of the day (date, count, names) to share or save. */
+async function shareDayCard(btn) {
+  const t = strings[state.lang];
+  const L = state.lang;
+  const rtl = L === 'he';
+  btn.disabled = true;
+  try {
+    await Promise.all(['400 80px Newsreader', 'italic 400 40px Newsreader', '500 80px "Noto Serif Hebrew"', '500 30px Inter']
+      .map((f) => document.fonts.load(f, 'אבג abc').catch(() => {})));
+    const W = 1080, H = 1350, M = 96;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    const serif = rtl ? '"Noto Serif Hebrew", serif' : 'Newsreader, Georgia, serif';
+    g.fillStyle = '#f7f5f0'; g.fillRect(0, 0, W, H);
+    g.direction = rtl ? 'rtl' : 'ltr';
+    g.textAlign = rtl ? 'right' : 'left';
+    const X = rtl ? W - M : M;
+    // Flame mark, drawn from the app icon.
+    const icon = new Image();
+    icon.src = 'icon.svg';
+    await icon.decode().catch(() => {});
+    if (icon.complete && icon.naturalWidth) g.drawImage(icon, rtl ? M : W - M - 84, M, 84, 84);
+    g.fillStyle = '#85837c'; g.font = '500 30px Inter, sans-serif';
+    g.fillText(fmtGreg(state.date, L), X, M + 40);
+    g.fillStyle = '#1a1c20'; g.font = `500 ${rtl ? 92 : 96}px ${serif}`;
+    g.fillText(fmtHebrew(hdateFor(state.date), L), X, M + 170);
+    g.fillStyle = '#4a4c52'; g.font = rtl ? '400 44px "Noto Serif Hebrew", serif' : 'italic 400 46px Newsreader, serif';
+    g.fillText(todayList.length === 1 ? t.countOne : t.countMany(fmtNum(todayList.length, L)), X, M + 245);
+    g.fillStyle = '#e3ded3'; g.fillRect(M, M + 300, W - 2 * M, 2);
+    const shown = todayList.slice(0, 10);
+    g.font = `400 46px ${serif}`;
+    shown.forEach((p, i) => {
+      const y = M + 390 + i * 68;
+      g.fillStyle = p.category === 'soldier' ? '#2a78d6' : '#eb6834';
+      g.fillRect(rtl ? W - M + 18 : M - 24, y - 34, 4, 40);
+      g.fillStyle = '#1a1c20';
+      g.fillText(pick(p.name, L), X, y);
+    });
+    if (todayList.length > shown.length) {
+      g.fillStyle = '#85837c'; g.font = rtl ? '400 38px "Noto Serif Hebrew", serif' : 'italic 400 40px Newsreader, serif';
+      g.fillText(t.cardMore(fmtNum(todayList.length - shown.length, L)), X, M + 390 + shown.length * 68 + 4);
+    }
+    g.fillStyle = '#85837c'; g.font = '500 28px Inter, sans-serif';
+    g.fillText(`${t.footer}  ·  ${location.host}${location.pathname.replace(/\/$/, '')}`, X, H - M + 40);
+    const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+    const file = new File([blob], `yahrzeit-${toISO(state.date)}.png`, { type: 'image/png' });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], text: `${fmtHebrew(hdateFor(state.date), L)} · ${location.href}` }).catch(() => {});
+    } else {
+      const url = URL.createObjectURL(file);
+      el('a', { href: url, download: file.name }).click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function closeSheet() {
@@ -620,6 +745,8 @@ function renderToday() {
   const all = allOn(state.date);
   renderPeriods($('#today-periods'), all);
   const list = all.filter(passes).sort((a, b) => a.died.localeCompare(b.died));
+  todayList = list;
+  $('#day-actions').hidden = !list.length;
   $('#count').textContent = list.length === 0 ? t.countZero : list.length === 1 ? t.countOne : t.countMany(fmtNum(list.length, L));
   const out = $('#list');
   out.replaceChildren(...(list.length
@@ -771,6 +898,8 @@ function bind() {
   cal.addEventListener('click', (e) => { if (e.target === cal) closeCalendar(); });
   cal.addEventListener('cancel', (e) => { e.preventDefault(); closeCalendar(); });
   $('#date-input').addEventListener('change', (e) => { if (e.target.value) { state.date = parseISO(e.target.value); render(); } });
+  $('#copy-all').addEventListener('click', (e) => copyAllNames(e.currentTarget));
+  $('#share-day').addEventListener('click', (e) => shareDayCard(e.currentTarget));
   $('#after-sunset').addEventListener('change', (e) => { state.afterSunset = e.target.checked; render(); });
   $('#search').addEventListener('input', (e) => { state.query = e.target.value; renderSearch(); });
 

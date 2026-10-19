@@ -80,7 +80,8 @@ export function anniversaryNumber(person, hyear) {
 /** The name as used in prayer: "Ploni ben Ploni". */
 export function prayerName(person, lang) {
   const n = person.name[lang] || person.name.he;
-  if (person.parents) return `${n} ${person.parents}`;
+  // English parents read "Son of …"; lower-case it after the name.
+  if (person.parents) return `${n} ${lang === 'en' ? person.parents.replace(/^(Son|Daughter) of/, (m) => m.toLowerCase()) : person.parents}`;
   const f = person.father?.[lang] || person.father?.he;
   if (!f) return n;
   const rel = lang === 'he'
