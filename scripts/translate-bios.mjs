@@ -8,7 +8,7 @@
 //
 // data/en/bios.jsonl ({id, en}) is the source of truth (build-data.mjs merges it on a full
 // rebuild); rerunning submit only sends what's missing. Bump the version (npm run bump) to publish.
-import { appendFileSync, existsSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import Anthropic from '@anthropic-ai/sdk';
 
 const MODEL = 'claude-haiku-5-5';
@@ -89,6 +89,7 @@ if (cmd === 'sample') {
     md += `## ${w.id}\n\n### Hebrew\n\n${w.cv}\n\n### English\n\n${textOf(msg)}\n\n`;
     process.stdout.write('.');
   }
+  mkdirSync(new URL('raw/', root), { recursive: true });
   writeFileSync(new URL('raw/bio-sample.md', root), md);
   // Haiku 5.5: $0.10 / $0.50 per million tokens; the batch API halves that.
   const perBio = (usage.input * 0.10 + usage.output * 0.50) / 1e6 / picks.length / 2;
