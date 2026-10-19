@@ -6,14 +6,16 @@ A daily yahrzeit list for Israel's fallen soldiers and security personnel and fo
 
 ## Features
 - **Today's yahrzeits** by Hebrew date. Go to another day with the arrows, by swiping, with the arrow keys, by tapping the date for a picker, or from the scrollable strip of days, which shows how many people are remembered on each day. An "after sunset" switch moves to the next Hebrew day.
-- **Details panel:** tap a name to see all of the person's details, copy "Ploni ben/bat Ploni" for prayer, share, or open the official record.
-- **Search** by name, father's name or town, with each result's next yahrzeit.
+- **Copy all names:** one tap copies the day's list (within the current filters) as prayer names, "Ploni ben/bat Ploni" with the parents from each official record.
+- **Share today:** makes a portrait image with the Hebrew date, the number remembered and the first names, for WhatsApp and the like (downloads on a computer).
+- **Details panel:** tap a name to see all of the person's details and biography, copy their name for prayer, share, open the official record, or **add to calendar** (a calendar file with the next ten yahrzeits, converted from the Hebrew date).
+- **Search** by name, town, unit or place of attack, with each result's next yahrzeit.
 - **Filters:** civilians or security forces, and by war (official war dates; see `src/periods.js`). Neither official list records how a soldier died, so there is no battle/terror/accident filter.
 - **Hebrew and English**, with right-to-left layout in Hebrew. English names come from izkor.gov.il; the rest (all civilians, about 1,200 soldiers) are transliterated via `data/en/names.json` and places via `data/en/places.json` (see `scripts/english.mjs`). Biographies are published in Hebrew only; English mode shows a one-time machine translation when one exists (see below), otherwise the Hebrew.
 - **Calendar:** tap the date for a Hebrew month view with the number remembered each day.
-- **Timeline tab:** people remembered by year of death, civilians stacked on security forces, war periods shaded; tap a year to list its names.
+- **Timeline tab:** one dot for each person, grouped by year of death, newest first (security forces, then civilians). Tap a dot for the name and then the details; the war buttons jump to each war; pinch (or − / +) to make the dots bigger.
 - **Installable app:** it can be added to a phone's home screen and works offline.
-- Light and dark modes. No build step and no backend, so it can be hosted on GitHub Pages.
+- Light (default) and dark modes, switched from the top bar. No build step and no backend, so it can be hosted on GitHub Pages.
 
 ## Run
 ```bash

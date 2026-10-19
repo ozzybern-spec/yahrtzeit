@@ -23,7 +23,6 @@ const state = {
   afterSunset: false,
   category: 'all',
   period: 'all',
-  year: null, // search by year of death, set from the timeline
   adar: store.get('adar') === 'II' ? 'II' : 'I',
   theme: store.get('theme') === 'dark' ? 'dark' : 'light',
   query: '',
@@ -821,16 +820,13 @@ function renderSearch() {
   const t = strings[state.lang];
   const q = state.query.trim();
   $('#search').placeholder = t.search;
-  const yc = $('#search-year');
-  yc.hidden = state.year == null;
-  if (state.year != null) yc.textContent = t.yearChip(state.year);
-  if (!q && state.year == null) {
+  if (!q) {
     $('#search-count').textContent = '';
     renderPeriods($('#search-periods'), []);
     $('#results').replaceChildren(el('p', { class: 'empty' }, t.searchHint));
     return;
   }
-  const found = state.people.filter((p) => passesCategory(p) && (!q || matches(p, q)) && (state.year == null || yearOf(p) === state.year));
+  const found = state.people.filter((p) => passesCategory(p) && matches(p, q));
   renderPeriods($('#search-periods'), found);
   const list = found.filter(passes);
   $('#search-count').textContent = t.searchResults(fmtNum(list.length, state.lang)) + (list.length > 200 ? ` · ${t.firstShown(200)}` : '');
@@ -845,6 +841,7 @@ function render() {
   document.documentElement.lang = L;
   document.documentElement.dir = L === 'he' ? 'rtl' : 'ltr';
   document.documentElement.dataset.theme = state.theme;
+  $('meta[name="theme-color"]').content = state.theme === 'dark' ? '#111316' : '#f7f5f0';
   for (const b of $$('[data-theme-opt] button')) b.setAttribute('aria-pressed', String(b.dataset.themeVal === state.theme));
   document.title = t.title;
   for (const n of $$('[data-t]')) {
@@ -910,7 +907,6 @@ function bind() {
   for (const b of $$('[data-filters] button')) {
     b.addEventListener('click', () => { state.category = b.dataset.cat; render(); });
   }
-  $('#search-year').addEventListener('click', () => { state.year = null; renderSearch(); });
   initPinch();
   // Close the dot popup on scroll or a tap elsewhere.
   window.addEventListener('scroll', hideDotTip, { passive: true });

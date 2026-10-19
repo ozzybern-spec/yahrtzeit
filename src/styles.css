@@ -404,7 +404,6 @@ html[dir='rtl'] .tl-war-h { font-size: .8rem; letter-spacing: .02em; }
 .tl-tip-main strong { font: 500 1rem/1.25 var(--serif); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 html[dir='rtl'] .tl-tip-main strong { font: 500 .95rem/1.3 var(--hebrew); }
 .tl-tip-main span { font-size: .72rem; color: var(--muted); }
-.year-chip { margin-top: 12px; }
 
 .install-banner {
   display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 12px 0;
