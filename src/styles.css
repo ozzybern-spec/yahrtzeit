@@ -331,8 +331,7 @@ html[dir='rtl'] .footer-note { font: 400 .95rem/1.4 var(--hebrew); }
 .sheet-head { margin-top: 6px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
 .sheet-name { margin: 14px 0 0; font: 400 1.95rem/1.2 var(--serif); letter-spacing: -.01em; }
 html[dir='rtl'] .sheet-name { font: 500 1.7rem/1.3 var(--hebrew); letter-spacing: 0; }
-.sheet-prayer { margin: 2px 0 0; color: var(--ink-2); font: italic 400 1.05rem/1.4 var(--serif); }
-html[dir='rtl'] .sheet-prayer { font: 400 1rem/1.4 var(--hebrew); }
+.sheet-prayer { margin: 2px 0 0; color: var(--ink-2); font: 400 1.05rem/1.4 var(--hebrew); }
 .tag { margin-top: 8px; font: 500 .7rem/1 var(--sans); letter-spacing: .04em; padding: 5px 10px; border-radius: 99px; }
 .tag.soldier { background: var(--soldier-soft); color: var(--ink); }
 .tag.terror { background: var(--terror-soft); color: var(--ink); }

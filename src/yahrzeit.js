@@ -78,14 +78,8 @@ export function anniversaryNumber(person, hyear) {
 }
 
 /** The name as used in prayer: "Ploni ben Ploni". */
-export function prayerName(person, lang) {
-  const n = person.name[lang] || person.name.he;
-  // English parents read "Son of …"; lower-case it after the name.
-  if (person.parents) return `${n} ${lang === 'en' ? person.parents.replace(/^(Son|Daughter) of/, (m) => m.toLowerCase()) : person.parents}`;
-  const f = person.father?.[lang] || person.father?.he;
-  if (!f) return n;
-  const rel = lang === 'he'
-    ? (person.gender === 'f' ? 'בת' : 'בן')
-    : (person.gender === 'f' ? 'bat' : 'ben');
-  return `${n} ${rel} ${f}`;
+/** "פלוני בן אלמוני": always Hebrew, with the father's name only. */
+export function prayerName(person) {
+  const n = person.name.he;
+  return person.father ? `${n} ${person.gender === 'f' ? 'בת' : 'בן'} ${person.father}` : n;
 }

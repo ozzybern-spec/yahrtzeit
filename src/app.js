@@ -75,6 +75,7 @@ function expand(o) {
     unit: both(o.u, o.ue),
     hometown: both(o.t, o.te),
     hasBio: Boolean(o.b),
+    father: o.p,
   };
   if (o.f === 1) p.photo = `https://www.izkor.gov.il/assets/person/images/${o.i.split('-')[1].padStart(6, '0')}.jpg`;
   else if (o.f) p.photo = `https://laad.btl.gov.il${o.f}`;
@@ -202,9 +203,8 @@ async function openSheet(base) {
   const L = state.lang;
   const extra = await loadDetails(base);
   const p = { ...base, ...extra, place: extra.place && { he: extra.place.he || extra.place } };
-  if (L === 'en' && p.parentsEn) p.parents = p.parentsEn;
   const died = deathHDate(p);
-  const pn = prayerName(p, L);
+  const pn = prayerName(p);
   const fromLaad = p.id.startsWith('laad-');
   const body = $('#sheet-body');
 
@@ -228,7 +228,8 @@ async function openSheet(base) {
       avatar(p, 'portrait'),
       el('h2', { class: 'sheet-name', dir: 'auto' }, pick(p.name, L)),
       p.nick && el('p', { class: 'sheet-nick', dir: 'rtl' }, `(${p.nick})`),
-      (p.father || p.parents) && el('p', { class: 'sheet-prayer', dir: 'auto' }, pn),
+      // The Hebrew prayer name under the full name (in Hebrew only when it adds the father).
+      (p.father || L === 'en') && el('p', { class: 'sheet-prayer', dir: 'rtl', lang: 'he' }, pn),
       hasBothCategories() && el('span', { class: `tag ${p.category}` }, t[p.category]),
     ),
     el('div', { class: 'actions' },
@@ -266,47 +267,25 @@ async function openSheet(base) {
   requestAnimationFrame(() => dlg.classList.add('open'));
 }
 
-/** "Name ben/bat Father" with the parents from the person's details file. */
-async function fullPrayerName(p, L) {
-  const extra = await loadDetails(p);
-  const parents = L === 'en' && extra.parentsEn ? extra.parentsEn : extra.parents;
-  return prayerName({ ...p, parents }, L);
-}
-
-/** Runs fn over items, a few at a time, keeping the order. */
-async function mapLimit(items, n, fn) {
-  const out = new Array(items.length);
-  let next = 0;
-  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
-    while (next < items.length) { const i = next++; out[i] = await fn(items[i], i); }
-  }));
-  return out;
-}
-
 let todayList = [];
 
-async function copyAllNames(btn) {
+async function copyAllNames() {
   const t = strings[state.lang];
   const L = state.lang;
   if (!todayList.length) return;
-  const label = btn.lastChild.textContent;
-  btn.disabled = true;
-  btn.lastChild.textContent = t.preparing;
+  const names = todayList.map((p) => prayerName(p));
+  const head = `${fmtHebrew(hdateFor(state.date), L)} · ${todayList.length === 1 ? t.countOne : t.countMany(fmtNum(todayList.length, L))}`;
   try {
-    const names = await mapLimit(todayList, 8, (p) => fullPrayerName(p, L));
-    const head = `${fmtHebrew(hdateFor(state.date), L)} · ${todayList.length === 1 ? t.countOne : t.countMany(fmtNum(todayList.length, L))}`;
     await navigator.clipboard.writeText([head, '', ...names].join('\n'));
     toast(t.copiedAll(fmtNum(names.length, L)));
   } catch { /* clipboard unavailable */ }
-  btn.disabled = false;
-  btn.lastChild.textContent = label;
 }
 
 /** A calendar file with the next ten yahrzeits (Hebrew dates move, so no yearly repeat rule). */
 async function downloadIcs(p) {
   const t = strings[state.lang];
   const L = state.lang;
-  const name = await fullPrayerName(p, L);
+  const name = prayerName(p);
   const now = hdateFor(startOfDay(new Date())).getFullYear();
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
   const esc = (x) => String(x).replace(/[\\;,]/g, (m) => `\\${m}`).replace(/\n/g, '\\n');
@@ -895,7 +874,7 @@ function bind() {
   cal.addEventListener('click', (e) => { if (e.target === cal) closeCalendar(); });
   cal.addEventListener('cancel', (e) => { e.preventDefault(); closeCalendar(); });
   $('#date-input').addEventListener('change', (e) => { if (e.target.value) { state.date = parseISO(e.target.value); render(); } });
-  $('#copy-all').addEventListener('click', (e) => copyAllNames(e.currentTarget));
+  $('#copy-all').addEventListener('click', copyAllNames);
   $('#share-day').addEventListener('click', (e) => shareDayCard(e.currentTarget));
   $('#after-sunset').addEventListener('change', (e) => { state.afterSunset = e.target.checked; render(); });
   $('#search').addEventListener('input', (e) => { state.query = e.target.value; renderSearch(); });

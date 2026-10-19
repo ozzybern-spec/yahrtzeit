@@ -54,6 +54,7 @@ export function toSoldier(r) {
     burial: r.cemetery_name ? { he: r.cemetery_name } : undefined,
     parents: r.parents_label || undefined,
     parentsEn: en.parents_label || undefined,
+    father: r.father_name?.trim() || undefined,
     mia: r.is_mia || undefined,
     photo: r.has_image ? `https://www.izkor.gov.il/assets/person/images/${String(r.legacy_id).padStart(6, '0')}.jpg` : undefined,
     source: `https://www.izkor.gov.il/x/${r.person_id}`,
@@ -86,6 +87,46 @@ function loadIzkor(raw) {
 
 const LAAD_PHOTO = 'https://laad.btl.gov.il';
 
+/**
+ * Father's name from a civilian's parents line, which lists the mother first:
+ * "בן שרה ויעקב". `names` holds first names known to be fathers' or mothers'
+ * (from the soldiers' records) to read the harder lines: "בן הרב שלום וינברגר"
+ * is one parent whose surname starts with ו, and "בת רבקה" is only the mother.
+ */
+export function fatherFromLabel(label, names = { male: new Set(), female: new Set() }) {
+  const rest = label?.replace(/^(בן|בת)\s+/, '').trim();
+  if (!rest || rest === label?.trim()) return undefined;
+  const first = (s) => s.replace(/[()]/g, ' ').trim().split(/\s+/)[0];
+  const isFather = (s) => /^(הרב|ר'|רבי)\s/.test(s) || (names.male.has(first(s)) && !names.female.has(first(s)));
+  const i = rest.lastIndexOf(' ו');
+  if (i > 0) return isFather(rest.slice(0, i)) ? rest : rest.slice(i + 2).trim() || undefined;
+  return isFather(rest) ? rest : undefined;
+}
+
+/**
+ * First names of fathers and of mothers in the soldiers' records. A name
+ * counts for one side when it appears there at least five times as often
+ * (the records have a few slips, such as a father's name in the mother field).
+ */
+export function parentNames(raw) {
+  const count = new Map();
+  const add = (name, i) => {
+    const w = name?.trim().split(/\s+/)[0];
+    if (!w) return;
+    const c = count.get(w) || [0, 0];
+    c[i]++;
+    count.set(w, c);
+  };
+  for (const r of raw) { add(r.father_name, 0); add(r.mother_name, 1); }
+  const male = new Set();
+  const female = new Set();
+  for (const [w, [m, f]] of count) {
+    if (m >= 5 * f) male.add(w);
+    else if (f >= 5 * m) female.add(w);
+  }
+  return { male, female };
+}
+
 /** Compact index entry; the app expands it back (see expand() in src/app.js). */
 function indexEntry(p) {
   const o = { i: p.id, c: p.category, n: p.name.he, d: p.died };
@@ -103,6 +144,7 @@ function indexEntry(p) {
   if (p.hometown?.en) o.te = p.hometown.en;
   if (p.photo) o.f = p.photo.startsWith(LAAD_PHOTO) ? p.photo.slice(LAAD_PHOTO.length) : 1;
   if (p.cv) o.b = 1;
+  if (p.father) o.p = p.father;
   return o;
 }
 
@@ -125,8 +167,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   // Fill English where the sources have none (official spellings first; see english.mjs).
   const maps = englishMaps(raw);
+  const names = parentNames(raw);
   const missingEn = { name: 0, place: 0 };
   for (const p of people) {
+    // Civilians: the father comes from the parents line.
+    if (!p.father && p.category === 'terror') p.father = fatherFromLabel(p.parents, names);
     p.name.en ||= englishName(p.name.he, maps);
     if (!p.name.en) missingEn.name++;
     if (p.hometown?.he) p.hometown.en ||= englishPlace(p.hometown.he, maps);

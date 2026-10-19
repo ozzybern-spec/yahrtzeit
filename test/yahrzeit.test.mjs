@@ -41,9 +41,10 @@ test('anniversary number and next yahrzeit', () => {
   assert.equal(nextYahrzeit(x, new HDate(new Date(2026, 9, 16))).toString(), '22 Tishrei 5788');
 });
 
-test('prayer name uses ben/bat', () => {
-  assert.equal(prayerName(p('2023-10-07', { father: { he: 'אלמוני' } }), 'he'), 'פלוני בן אלמוני');
-  assert.equal(prayerName(p('2023-10-07', { gender: 'f', father: { en: 'Almoni' } }), 'en'), 'Ploni bat Almoni');
+test('prayer name is Hebrew with ben/bat and the father', () => {
+  assert.equal(prayerName(p('2023-10-07', { father: 'אלמוני' })), 'פלוני בן אלמוני');
+  assert.equal(prayerName(p('2023-10-07', { gender: 'f', father: 'אלמוני' })), 'פלוני בת אלמוני');
+  assert.equal(prayerName(p('2023-10-07')), 'פלוני');
 });
 
 test('Sephardi custom moves a regular-year Adar death to Adar II', () => {
@@ -52,6 +53,6 @@ test('Sephardi custom moves a regular-year Adar death to Adar II', () => {
   assert.equal(yahrzeitIn(x, 5785, 'II').toString(), '13 Adar 5785');
 });
 
-test('prayer name uses the official parents line when present', () => {
-  assert.equal(prayerName(p('2023-10-07', { parents: 'בן אלמוני ופלונית' }), 'he'), 'פלוני בן אלמוני ופלונית');
+test('prayer name uses only the father, even when both parents are listed', () => {
+  assert.equal(prayerName(p('2023-10-07', { parents: 'בן פלונית ואלמוני', father: 'אלמוני' })), 'פלוני בן אלמוני');
 });
